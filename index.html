@@ -2035,7 +2035,98 @@ e:"<strong>Correct: Snowball Edge Compute Optimized.</strong> Snow family compar
 q:"A large enterprise wants to centralize security logs from CloudTrail, VPC Flow Logs, Route 53 DNS logs, Lambda logs, and third-party security tools (firewall logs, endpoint detection) across all AWS accounts into a single security data lake for long-term retention, SIEM integration, and custom security analytics with Athena. What service automates this?",
 o:["Stream all logs to a CloudWatch Logs cross-account central log group","Manually configure each account to deliver logs to a central S3 bucket","Amazon Security Lake — automatically centralizes security data from AWS sources (CloudTrail, VPC Flow Logs, Route 53, Lambda, Security Hub findings) and third-party sources into a dedicated S3 security lake in a subscriber account; normalizes all data to the OCSF (Open Cybersecurity Schema Framework) standard; integrates with Athena, OpenSearch, and SIEM tools for analysis; manages data lifecycle and replication across regions","Use AWS Glue to crawl all log sources and load them into a central Redshift cluster"],
 c:2,
-e:"<strong>Correct: Amazon Security Lake.</strong> Security Lake automates the collection, normalization, and centralization of security data. What it does automatically: enables log sources across all accounts in an Organization (CloudTrail management and data events, VPC Flow Logs, Route 53 query logs, Lambda execution logs, Security Hub findings, AWS WAF logs). Normalizes to OCSF: Open Cybersecurity Schema Framework — a vendor-neutral, open standard format making data consistent regardless of source. Stores in dedicated S3 buckets with configurable lifecycle. Subscribers: security tools, SIEMs (Splunk, Sumo Logic), analytics tools (Athena, Amazon SageMaker) can subscribe to query the data. Why it matters: without Security Lake, you need custom scripts/Glue jobs to collect, normalize, and deliver logs from 10+ sources. Security Lake does this with a few clicks. OCSF normalization means your Athena queries work the same way for CloudTrail events, VPC Flow Logs, and firewall logs."}
+e:"<strong>Correct: Amazon Security Lake.</strong> Security Lake automates the collection, normalization, and centralization of security data. What it does automatically: enables log sources across all accounts in an Organization (CloudTrail management and data events, VPC Flow Logs, Route 53 query logs, Lambda execution logs, Security Hub findings, AWS WAF logs). Normalizes to OCSF: Open Cybersecurity Schema Framework — a vendor-neutral, open standard format making data consistent regardless of source. Stores in dedicated S3 buckets with configurable lifecycle. Subscribers: security tools, SIEMs (Splunk, Sumo Logic), analytics tools (Athena, Amazon SageMaker) can subscribe to query the data. Why it matters: without Security Lake, you need custom scripts/Glue jobs to collect, normalize, and deliver logs from 10+ sources. Security Lake does this with a few clicks. OCSF normalization means your Athena queries work the same way for CloudTrail events, VPC Flow Logs, and firewall logs."},
+
+// ── REAL-EXAM STYLE BATCH (ids 281–295) ──
+{id:281,domain:"High-Performing Architectures",topic:"Compute",sub:"Session State Externalization",
+q:"A company runs a web application on EC2 instances behind an Application Load Balancer. The application stores user session data locally on each instance. Users frequently report being logged out when their requests are routed to a different instance. The solutions architect must fix this with the LEAST amount of application code changes.",
+o:["Enable sticky sessions (session affinity) on the Application Load Balancer","Store session data in Amazon ElastiCache for Redis and update the application to use it","Increase the number of EC2 instances to reduce the probability of cross-instance routing","Store session data in an Amazon RDS database"],
+c:1,
+e:"<strong>Correct: ElastiCache for Redis.</strong> Externalizing session state to ElastiCache is the scalable fix — all instances share the same session store, so routing to any instance works correctly. Sticky sessions (A) avoids the problem but doesn't solve it: sessions break during auto scaling events when an instance is terminated. More instances (C) make the problem worse, not better. RDS (D) works but adds unnecessary latency and cost compared to an in-memory store designed for this purpose."},
+
+{id:282,domain:"Cost-Optimized Architectures",topic:"Storage",sub:"S3 Lifecycle Policies",
+q:"A company stores application log files in Amazon S3. Logs are accessed frequently for the first 30 days, occasionally for the next 60 days, and rarely after that. The logs must be retained for 7 years for compliance. What is the MOST cost-effective storage strategy?",
+o:["Store all logs in S3 Intelligent-Tiering for automatic cost optimization","Use an S3 Lifecycle policy: S3 Standard for 30 days, S3 Standard-IA for 60 days, then S3 Glacier Flexible Retrieval for the remainder","Store all logs in S3 Standard and delete them after 7 years","Use an S3 Lifecycle policy: S3 Standard for 90 days, then transition directly to S3 Glacier Deep Archive"],
+c:1,
+e:"<strong>Correct: Lifecycle policy matching the access pattern.</strong> Tiering through Standard → Standard-IA → Glacier minimizes cost at each stage by matching the storage class to the actual access frequency. Intelligent-Tiering (A) charges a monthly monitoring fee per object and is best when access patterns are <em>unknown</em> — here they are known. Skipping Standard-IA (D) leaves money on the table during the 60-day occasional-access window where IA is cheaper than Standard. Keeping everything in S3 Standard (C) is the most expensive option."},
+
+{id:283,domain:"Resilient Architectures",topic:"Networking",sub:"NAT Gateway",
+q:"A company has EC2 instances in a private subnet that need to download software updates from the internet. The security team requires that no inbound internet traffic can reach the instances. What should a solutions architect configure?",
+o:["Attach an internet gateway to the VPC and add a route in the private subnet route table pointing to it","Deploy a NAT Gateway in a public subnet and add a route in the private subnet route table pointing 0.0.0.0/0 to the NAT Gateway","Assign Elastic IP addresses to the EC2 instances in the private subnet","Create a VPC endpoint for the software repository"],
+c:1,
+e:"<strong>Correct: NAT Gateway in a public subnet.</strong> A NAT Gateway allows instances in private subnets to make outbound internet connections (for updates) while preventing any inbound connections from the internet. It must be placed in a public subnet with a route to the internet gateway. Option A would expose the instances directly to inbound internet traffic. Elastic IPs (C) make instances publicly reachable, violating the security requirement. VPC endpoints (D) only work for AWS services, not arbitrary internet sources."},
+
+{id:284,domain:"Cost-Optimized Architectures",topic:"Compute",sub:"EC2 Pricing Models",
+q:"A company runs a stateless batch processing job that analyzes data from an SQS queue. The job runs for 4–6 hours each night and can tolerate interruptions because jobs are re-queued automatically. What is the MOST cost-effective EC2 purchasing option?",
+o:["On-Demand Instances to ensure availability throughout the job","Reserved Instances with a 1-year term commitment","Spot Instances","Dedicated Hosts"],
+c:2,
+e:"<strong>Correct: Spot Instances.</strong> Spot Instances offer up to 90% savings vs. On-Demand. This workload is an ideal Spot candidate: it's stateless (no lost work if interrupted because SQS re-queues the message), interruptible by design, and runs on a predictable nightly schedule. On-Demand (A) works but costs significantly more. Reserved Instances (B) require a 1- or 3-year commitment and are better for 24/7 steady-state workloads. Dedicated Hosts (D) are the most expensive option and used for licensing or compliance requirements."},
+
+{id:285,domain:"Resilient Architectures",topic:"Databases",sub:"Cross-Region Disaster Recovery",
+q:"A company runs a critical application using Amazon RDS for MySQL in us-east-1. The application requires a Recovery Time Objective (RTO) of less than 1 minute and a Recovery Point Objective (RPO) of less than 5 seconds in the event of a regional failure. Which solution meets these requirements?",
+o:["Enable RDS Multi-AZ in us-east-1 with automated backups to S3","Create a read replica in us-west-2 and promote it manually during a failure","Deploy Amazon Aurora Global Database with us-west-2 as a secondary region","Configure AWS Database Migration Service (DMS) to continuously replicate data to us-west-2"],
+c:2,
+e:"<strong>Correct: Aurora Global Database.</strong> Aurora Global Database replicates data across regions with typically under 1 second of lag (meeting the 5-second RPO). In a failure, managed failover promotes the secondary region in under 1 minute (meeting the RTO). RDS Multi-AZ (A) is single-region — it doesn't protect against regional failure. A standard read replica (B) requires manual promotion which takes several minutes, exceeding the 1-minute RTO. DMS (D) is a migration tool, not a high-availability solution."},
+
+{id:286,domain:"Secure Architectures",topic:"Encryption",sub:"Server-Side Encryption",
+q:"A company wants to encrypt all objects stored in Amazon S3. The security team requires that the company controls the encryption keys and that all key usage is logged in AWS CloudTrail. Which solution meets these requirements?",
+o:["Enable SSE-S3 (server-side encryption with S3-managed keys) on the bucket","Enable SSE-KMS with an AWS managed key (aws/s3)","Enable SSE-KMS with a customer managed key (CMK) created in AWS KMS","Enable SSE-C and provide the encryption key in each API request"],
+c:2,
+e:"<strong>Correct: SSE-KMS with a customer managed key.</strong> CMKs give the company full control: define key policies, enable/disable the key, set rotation schedules, and grant/revoke access. All CMK usage (encrypt, decrypt calls) is automatically logged in CloudTrail. SSE-S3 (A) uses keys fully managed by AWS — the company has no control. The AWS managed key (B) is managed by AWS; while usage is logged, the company cannot control, disable, or audit the key policy directly. SSE-C (D) requires sending the key with every API request and doesn't integrate with CloudTrail key usage logging."},
+
+{id:287,domain:"High-Performing Architectures",topic:"Application Integration",sub:"Decoupled Serverless Architecture",
+q:"A company needs to process images uploaded to Amazon S3. Each image must be resized into three thumbnail sizes. Processing takes 3–5 seconds per image. Upload volume varies from 10 to 2,000 images per hour unpredictably. The solution must scale automatically and minimize operational overhead. What architecture should a solutions architect recommend?",
+o:["S3 event notification → Lambda function (invoke directly for each upload)","S3 event notification → Amazon SNS → Amazon SQS → Lambda function","S3 event notification → SQS queue → Lambda function","S3 event notification → SQS queue → EC2 Auto Scaling group"],
+c:2,
+e:"<strong>Correct: S3 → SQS → Lambda.</strong> SQS buffers the unpredictable upload spikes so no images are dropped, and Lambda scales automatically to process the queue. The 3–5 second processing time is well within Lambda's 15-minute limit. Direct Lambda invocation (A) works at low volume but risks throttling and dropped events during spikes without a buffer. Adding SNS between S3 and SQS (B) adds unnecessary complexity — S3 can write directly to SQS. EC2 Auto Scaling (D) adds significant operational overhead compared to the serverless Lambda approach."},
+
+{id:288,domain:"Resilient Architectures",topic:"Disaster Recovery",sub:"DR Strategy Selection",
+q:"A company's application has an RTO of 4 hours and an RPO of 1 hour. The application runs on EC2 instances with an RDS database. The company wants the MOST cost-effective disaster recovery solution that meets these requirements.",
+o:["Multi-site active-active deployment across two regions","Warm standby with a scaled-down environment running in a second region","Pilot light with core infrastructure (database replication) running in a second region and EC2 AMIs ready to launch","Backup and restore using AWS Backup with cross-region copy"],
+c:2,
+e:"<strong>Correct: Pilot light.</strong> Pilot light keeps only the minimum core components running in the DR region (the database replicating continuously meets the 1-hour RPO), with EC2 AMIs pre-built ready to launch quickly. Recovery launches the EC2 fleet and scales up — achievable within 4 hours (meeting the RTO). This is cheaper than warm standby (B), which runs a scaled-down but live EC2 fleet at ongoing cost. Multi-site active-active (A) meets both RTOs easily but is the most expensive option. Backup and restore (D) has RTO measured in hours-to-days depending on data size, making it too slow."},
+
+{id:289,domain:"High-Performing Architectures",topic:"Networking",sub:"CloudFront for Static Content",
+q:"A company hosts a static website in an Amazon S3 bucket in us-east-1. International users report slow load times. The company wants to improve performance for all users globally with the LEAST operational overhead.",
+o:["Enable S3 Transfer Acceleration on the bucket","Create an Amazon CloudFront distribution with the S3 bucket as the origin","Deploy EC2 instances in multiple regions and use Route 53 latency-based routing","Enable S3 Cross-Region Replication to buckets in multiple regions"],
+c:1,
+e:"<strong>Correct: CloudFront distribution.</strong> CloudFront caches static content at 400+ edge locations worldwide, serving users from the nearest edge with the lowest latency — no code changes and minimal ongoing management. S3 Transfer Acceleration (A) speeds up <em>uploads</em> to S3, not downloads to end users. EC2 + Route 53 (C) requires running and managing infrastructure in multiple regions — high operational overhead. S3 Cross-Region Replication (D) copies data between regions but doesn't bring content closer to users at the edge and requires managing multiple buckets and DNS."},
+
+{id:290,domain:"Cost-Optimized Architectures",topic:"Networking",sub:"VPC Endpoints",
+q:"A company has hundreds of EC2 instances in private subnets that frequently read and write objects to Amazon S3. The company is seeing high costs for data transfer through their NAT Gateway. What is the MOST cost-effective way to reduce these costs without impacting functionality?",
+o:["Enable S3 Transfer Acceleration to reduce NAT Gateway usage","Create an S3 Gateway Endpoint and update the route tables in the private subnets","Move the EC2 instances to public subnets so they can access S3 directly","Use an S3 Interface Endpoint instead of routing through the NAT Gateway"],
+c:1,
+e:"<strong>Correct: S3 Gateway Endpoint.</strong> An S3 Gateway Endpoint routes S3 traffic from your VPC directly to S3 over Amazon's private network without going through the NAT Gateway — eliminating NAT Gateway data processing charges for S3 traffic. Gateway Endpoints are free. You simply create the endpoint and update the route table; no application changes needed. S3 Transfer Acceleration (A) is for speeding up uploads from on-premises, not for VPC-to-S3 traffic. Moving to public subnets (C) is a security risk. An Interface Endpoint (D) does work but costs money per hour and per GB, whereas a Gateway Endpoint is free."},
+
+{id:291,domain:"High-Performing Architectures",topic:"Databases",sub:"Read Replica vs Multi-AZ",
+q:"A company runs a read-heavy web application backed by Amazon RDS for PostgreSQL. The primary instance is struggling to keep up with read traffic, causing slow query response times. The database must remain highly available. What should a solutions architect recommend?",
+o:["Upgrade to a larger RDS instance size","Enable RDS Multi-AZ to distribute read traffic across the standby instance","Create one or more RDS Read Replicas and update the application to direct read queries to the replica endpoint","Enable ElastiCache for Redis in front of the database to cache all queries"],
+c:2,
+e:"<strong>Correct: RDS Read Replicas.</strong> Read Replicas offload read traffic from the primary instance by providing a dedicated read endpoint. The application routes SELECT queries to replicas and writes to the primary. You can add multiple replicas to scale reads further. Multi-AZ (B) is a common wrong answer here — the standby in a Multi-AZ deployment is not available for reads; it only takes over during failover. Upgrading instance size (A) helps temporarily but doesn't scale horizontally. ElastiCache (D) can help for repeated identical queries but adds application complexity and doesn't help for queries that must hit the database."},
+
+{id:292,domain:"Resilient Architectures",topic:"Application Integration",sub:"SQS Visibility Timeout",
+q:"A company uses SQS to decouple an order processing system. Occasionally, messages are processed multiple times, creating duplicate orders. A developer notes that order processing sometimes takes up to 3 minutes. The current SQS visibility timeout is 30 seconds. What should the solutions architect do?",
+o:["Switch to an SQS FIFO queue to prevent duplicate processing","Enable SQS long polling to reduce the chance of duplicate receives","Increase the visibility timeout to at least 4 minutes","Enable SQS dead-letter queue (DLQ) to catch duplicate messages"],
+c:2,
+e:"<strong>Correct: Increase the visibility timeout.</strong> When a consumer receives a message, SQS hides it for the visibility timeout period. If processing takes 3 minutes but the timeout is only 30 seconds, SQS makes the message visible again before processing finishes — causing another consumer to pick it up and create a duplicate. Setting the timeout to at least 4 minutes (longer than the max processing time) prevents this. FIFO queues (A) prevent duplicates from producers but don't fix the visibility timeout issue. Long polling (B) reduces empty receives but doesn't affect duplicate processing. DLQs (D) capture messages that repeatedly fail — they don't prevent duplicates."},
+
+{id:293,domain:"Secure Architectures",topic:"IAM",sub:"Cross-Account Access",
+q:"A company has two AWS accounts: Account A (development) and Account B (production). Developers in Account A need to deploy updates to an S3 bucket in Account B. The security team requires that no long-term access keys are used. What is the MOST secure way to grant this access?",
+o:["Create an IAM user in Account B, generate access keys, and share them with the Account A developers","Create an IAM role in Account B with a trust policy that allows Account A to assume it; developers use sts:AssumeRole","Create an S3 bucket policy in Account B that allows all principals from Account A","Grant Account A's root user cross-account S3 permissions"],
+c:1,
+e:"<strong>Correct: IAM role with cross-account trust policy.</strong> Developers in Account A assume the role in Account B using STS, receiving short-lived temporary credentials — no long-term keys ever leave Account B. The trust policy explicitly controls which Account A principals can assume the role. Sharing access keys (A) creates long-term credentials that can be leaked or forgotten. An open bucket policy (C) grants access to the entire Account A, not specific developers, and is too permissive. Using the root user (D) violates the principle of least privilege and is an AWS security anti-pattern."},
+
+{id:294,domain:"Resilient Architectures",topic:"Compute",sub:"Auto Scaling Policies",
+q:"A company runs a web application on an EC2 Auto Scaling group. The application's CPU utilization spikes to 90% at the start of every business day as users log in simultaneously, causing slow response times before Auto Scaling can add capacity. What should the solutions architect recommend to eliminate these delays?",
+o:["Switch from a target tracking scaling policy to a step scaling policy","Create a scheduled scaling action to increase the minimum capacity before business hours","Reduce the CloudWatch alarm evaluation period to 30 seconds","Enable predictive scaling to automatically forecast and pre-scale capacity"],
+c:3,
+e:"<strong>Correct: Predictive scaling.</strong> Predictive scaling uses machine learning to analyze historical load patterns and proactively adds capacity <em>before</em> the expected spike — eliminating the lag that causes slow response times at day start. Scheduled scaling (B) also works and is simpler, but requires manual configuration of a fixed schedule; predictive scaling adapts automatically to changing patterns. Step scaling (A) still reacts to existing load after a CloudWatch alarm fires — it doesn't predict. Shorter alarm periods (C) speed up reactive scaling slightly but still can't add capacity faster than a few minutes."},
+
+{id:295,domain:"Cost-Optimized Architectures",topic:"Compute",sub:"Right-Sizing Serverless",
+q:"A company runs a backend API using AWS Lambda. The functions are configured with 3,008 MB of memory but profiling shows they only use 256 MB during execution. Average execution time is 2 seconds. The company wants to reduce Lambda costs with the LEAST operational effort.",
+o:["Rewrite the Lambda functions in a more memory-efficient language","Reduce Lambda memory to 256 MB to match actual usage","Enable Lambda Provisioned Concurrency to reduce cold starts","Use AWS Compute Optimizer recommendations to right-size Lambda memory and update the configuration"],
+c:3,
+e:"<strong>Correct: AWS Compute Optimizer for Lambda.</strong> Compute Optimizer analyzes Lambda invocation data and recommends the optimal memory setting — balancing cost and performance. It provides specific recommendations with projected cost savings, requiring only a configuration update. Manually reducing to 256 MB (B) seems right but may be wrong: Lambda allocates CPU proportional to memory, so reducing memory too aggressively increases execution time, which could make the function slower and potentially more expensive overall. Compute Optimizer finds the actual optimum. Rewriting code (A) is high effort. Provisioned Concurrency (C) actually increases cost; it addresses cold starts, not memory over-provisioning."}
 ];
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2107,7 +2198,7 @@ function touchStreak() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function renderHome() {
   const p = pct(S.correct, S.answered);
-  const total = 290;
+  const total = 295;
   const pctDone = Math.round(((S.answered||0)/total)*100);
 
   // Hero banner
@@ -2115,7 +2206,7 @@ function renderHome() {
     <div class="home-hero">
       <div class="hero-eyebrow">AWS Solution Architect Associate</div>
       <div class="hero-title">SAA-C03 Exam Prep</div>
-      <div class="hero-sub">280 questions across all 4 exam domains</div>
+      <div class="hero-sub">295 questions across all 4 exam domains</div>
       <div class="hero-progress-label">
         <span>Questions answered</span>
         <span>${S.answered||0} / ${total}</span>
@@ -2235,7 +2326,7 @@ function renderDash() {
   }
 
   h += `<div style="text-align:center;padding:12px 0 4px;font-size:11px;color:var(--muted)">
-    280 questions · 4 SAA-C03 domains
+    295 questions · 4 SAA-C03 domains
   </div>`;
 
   document.getElementById('dash-body').innerHTML = h;
