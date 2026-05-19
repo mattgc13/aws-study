@@ -387,13 +387,13 @@ e:"<strong>Correct: Multi-AZ + Read Replicas.</strong> These are complementary, 
 
 {id:10,domain:"Resilient Architectures",topic:"Auto Scaling",sub:"Scaling Policy Types",
 q:"An e-commerce site has a known, predictable traffic spike every Saturday at noon that lasts 3 hours. During other times, traffic is moderate. What scaling strategy is MOST efficient?",
-o:["Target tracking on CPU — always reactive to actual load","Step scaling triggered at 70% CPU","Scheduled scaling to pre-provision capacity before noon Saturday, combined with target tracking for unexpected spikes","Manual scaling by an engineer every Saturday morning"],
+o:["Configure a target tracking scaling policy based on average CPU utilization","Configure a step scaling policy that triggers at 70% average CPU utilization","Configure a scheduled scaling action to add capacity before noon on Saturdays, combined with a target tracking policy for unexpected spikes","Have an operations engineer manually add capacity each Saturday morning before the spike"],
 c:2,
 e:"<strong>Correct: Scheduled + target tracking (hybrid).</strong> Scheduled scaling proactively provisions capacity before the known spike (e.g., scale out at 11:45 AM Saturday). This avoids the reactive lag of metric-based scaling, which can cause performance issues during the ramp-up period. Target tracking handles any unexpected additional load. This hybrid approach is best practice for predictable-but-variable traffic. Pure reactive scaling always lags behind demand. Manual scaling is error-prone and doesn't scale operationally."},
 
 {id:11,domain:"Resilient Architectures",topic:"Load Balancing",sub:"ALB vs NLB",
 q:"A multiplayer game uses custom TCP protocols on ports 7000–8000 and needs ultra-low latency. Client firewalls require static IP addresses to whitelist the endpoints. Which load balancer fits?",
-o:["Application Load Balancer (ALB) with sticky sessions","Network Load Balancer (NLB) with Elastic IPs","Classic Load Balancer","AWS Global Accelerator with ALB backend"],
+o:["Application Load Balancer (ALB)","Network Load Balancer (NLB)","Classic Load Balancer (CLB)","AWS Global Accelerator with an ALB endpoint"],
 c:1,
 e:"<strong>Correct: Network Load Balancer (NLB).</strong> NLB operates at Layer 4 (TCP/UDP/TLS) with microsecond latency, handles millions of requests/second, and supports assigning Elastic IPs (one static IP per AZ) — perfect for firewall whitelisting. ALB is Layer 7 (HTTP/HTTPS only) and does not support static IPs or raw TCP. Classic LB is legacy. Global Accelerator provides static IPs but routes to ALB which still can't handle non-HTTP. NLB is the definitive answer for TCP + static IP + ultra-low latency."},
 
@@ -473,7 +473,7 @@ e:"<strong>Correct: Aurora Auto Scaling for Read Replicas.</strong> Aurora Auto 
 // ── DOMAIN 4: COST-OPTIMIZED ARCHITECTURES ──
 {id:24,domain:"Cost-Optimized Architectures",topic:"EC2 Pricing",sub:"Spot Instances",
 q:"A genomics company runs 8-hour batch analysis jobs that can checkpoint and restart from where they left off if interrupted. They run these jobs continuously. What EC2 purchasing option minimizes cost?",
-o:["On-Demand Instances — guaranteed availability","Reserved Instances (1-year, no upfront) — predictable billing","Spot Instances — up to 90% discount for interruption-tolerant workloads","Dedicated Hosts — for licensing compliance"],
+o:["On-Demand Instances","Reserved Instances (1-year term, no upfront payment)","Spot Instances","Dedicated Hosts"],
 c:2,
 e:"<strong>Correct: Spot Instances.</strong> Spot Instances use spare AWS capacity at up to 90% discount vs On-Demand. The key qualifiers for Spot suitability: (1) fault-tolerant — can be interrupted with 2-minute warning ✓, (2) checkpointing — can resume from last checkpoint ✓. Batch analytics and genomics pipelines are the canonical Spot use cases. On-Demand: full price, no savings. Reserved: best for steady-state 24/7 workloads, not batch. Dedicated Hosts: for BYOL licensing compliance, expensive. Spot is always the answer for interruptible batch workloads."},
 
@@ -485,7 +485,7 @@ e:"<strong>Correct: Standard → Standard-IA (day 30) → Glacier Flexible Retri
 
 {id:26,domain:"Cost-Optimized Architectures",topic:"Savings Plans",sub:"Compute vs EC2",
 q:"A company uses EC2 (multiple families/regions), Lambda, and Fargate. They want ONE commitment-based discount covering all three. Which product should they purchase?",
-o:["EC2 Instance Savings Plans (specific family, specific region)","EC2 Reserved Instances (Convertible)","Compute Savings Plans — apply to EC2, Lambda, and Fargate regardless of instance family or region","Spot Instances for all three services"],
+o:["EC2 Instance Savings Plans","EC2 Reserved Instances (Convertible type)","Compute Savings Plans","Spot Instances"],
 c:2,
 e:"<strong>Correct: Compute Savings Plans.</strong> Compute Savings Plans are the most flexible commitment: they automatically apply to any EC2 (any family, size, OS, region, tenancy), Lambda, and Fargate. You commit to a $/hour spend for 1 or 3 years and get up to 66% savings. EC2 Instance Savings Plans cover only EC2 within a specific instance family and region — don't cover Lambda/Fargate. Convertible RIs cover only EC2. Spot doesn't apply to Lambda or Fargate at all. Compute Savings Plans is the right answer whenever the requirement spans multiple compute services."},
 
@@ -559,7 +559,7 @@ e:"<strong>Correct: Security Groups are stateful; NACLs are stateless.</strong> 
 
 {id:38,domain:"Secure Architectures",topic:"VPC",sub:"Interface Endpoints",
 q:"EC2 instances in a private subnet (no NAT, no internet) need to call AWS Secrets Manager, SSM Parameter Store, and KMS APIs. Which VPC endpoint type is required for these services?",
-o:["VPC Gateway Endpoints — works for all AWS services","VPC Interface Endpoints (AWS PrivateLink) — creates ENIs in your subnet for each service","NAT Gateway routing to the public service endpoints","Direct Connect private VIF for all API calls"],
+o:["VPC Gateway Endpoint for each required AWS service","VPC Interface Endpoint (AWS PrivateLink) for each required AWS service","NAT Gateway to allow instances to reach the public AWS service endpoints","AWS Direct Connect with a private virtual interface (VIF)"],
 c:1,
 e:"<strong>Correct: VPC Interface Endpoints (PrivateLink).</strong> Two VPC endpoint types: Gateway Endpoints: only S3 and DynamoDB, added to route tables, free. Interface Endpoints: all other AWS services (SSM, KMS, Secrets Manager, EC2 API, STS, etc.), create ENIs in your subnets, hourly cost + data fee. Traffic stays on the AWS private network — no internet required. For private subnets calling any AWS API that isn't S3/DynamoDB: create Interface Endpoints for each service. Also update Security Groups to allow HTTPS (443) from the private subnet to the endpoint ENIs."},
 
@@ -572,7 +572,7 @@ e:"<strong>Correct: Partition placement group.</strong> Partition groups: each p
 
 {id:40,domain:"High-Performing Architectures",topic:"EC2",sub:"EBS Volume Types",
 q:"A production relational database requires 40,000 sustained IOPS with consistent single-digit millisecond latency. Which EBS volume type is required?",
-o:["gp3 — up to 16,000 IOPS, cost-effective general purpose SSD","gp2 — 3 IOPS/GB, bursts to 16,000 IOPS","io1/io2 — provisioned IOPS SSD, up to 64,000 IOPS (Nitro) with consistent performance","st1 — throughput-optimized HDD, high sequential MB/s"],
+o:["Amazon EBS gp3 (General Purpose SSD)","Amazon EBS gp2 (General Purpose SSD, previous generation)","Amazon EBS io2 Block Express (Provisioned IOPS SSD)","Amazon EBS st1 (Throughput Optimized HDD)"],
 c:2,
 e:"<strong>Correct: io1/io2 Provisioned IOPS SSD.</strong> gp3: up to 16,000 IOPS (40,000 exceeds this). gp2: 3 IOPS/GB bursting to 16,000 — still insufficient. io1/io2: up to 64,000 IOPS on Nitro-based instances, consistent low latency, designed for I/O-intensive databases. st1/sc1: HDD — sequential throughput only, not suitable for random-access databases. io2 Block Express reaches 256,000 IOPS. Rule: whenever IOPS requirement exceeds 16,000, the answer is io1/io2. io2 also has higher durability (99.999%) vs io1 (99.8–99.9%)."},
 
@@ -597,7 +597,7 @@ e:"<strong>Correct: S3 Pre-signed URLs.</strong> The application server (with an
 
 {id:44,domain:"Secure Architectures",topic:"S3",sub:"Object Lock",
 q:"A healthcare company must retain patient records in S3 for exactly 10 years. No one — including AWS account root — should be able to delete or alter any record during the retention period. What S3 configuration achieves absolute immutability?",
-o:["S3 Versioning with MFA Delete — root with physical MFA device can still bypass","S3 Object Lock in Governance mode — privileged users with bypass permission can still delete/modify","S3 Object Lock in Compliance mode with 10-year retention — no override possible by anyone including root","S3 Lifecycle policy that prevents expiration actions"],
+o:["Enable S3 Versioning with MFA Delete on the bucket","Enable S3 Object Lock in Governance mode with a 10-year retention period","Enable S3 Object Lock in Compliance mode with a 10-year retention period","Configure an S3 Lifecycle policy to prevent objects from expiring for 10 years"],
 c:2,
 e:"<strong>Correct: S3 Object Lock — Compliance mode.</strong> Two modes: Governance mode: objects protected but users with s3:BypassGovernanceRetention CAN delete/overwrite — useful for testing or administrative exceptions. Compliance mode: the retention period CANNOT be shortened or overridden by ANY user, including root. Objects are completely immutable for the full retention period. Satisfies WORM (Write Once Read Many) compliance: SEC 17a-4, HIPAA, FINRA. Requires versioning. Legal Hold is a separate toggle that indefinitely protects an object independently of retention period (useful while litigation is pending)."},
 
@@ -622,8 +622,8 @@ e:"<strong>Correct: RDS Proxy.</strong> Lambda's execution model creates one con
 
 {id:48,domain:"Resilient Architectures",topic:"RDS",sub:"Point-in-Time Recovery",
 q:"An RDS MySQL database is accidentally corrupted by a developer running DROP TABLE on production. The team needs to recover the exact data from 3 days ago at 2:47 PM. What RDS feature makes this possible?",
-o:["Manual snapshot taken during the last maintenance window (previous night)","RDS automated backups with Point-in-Time Recovery (PITR) — restore to any second within the retention window","Export RDS data to S3 and restore from CSV","Restore from an RDS Read Replica"],
-c:0,
+o:["Restore from the most recent manual snapshot taken during the last maintenance window","Use RDS automated backups with Point-in-Time Recovery (PITR) to restore to any second within the backup retention window","Export RDS data to Amazon S3 and reimport from CSV files","Promote an existing RDS Read Replica to a standalone instance"],
+c:1,
 e:"<strong>Correct: RDS Automated Backups with Point-in-Time Recovery (PITR).</strong> RDS automated backups continuously archive transaction logs to S3 alongside daily backups. This enables PITR: restore the database to any specific second within the backup retention window (1–35 days). Restoring creates a NEW RDS instance (original stays untouched). Manual snapshots only capture the point-in-time of the snapshot — you can't restore to an arbitrary minute if your last snapshot was midnight. PITR to 2:47 PM exactly 3 days ago is only possible with automated backups. Always set retention to the maximum (35 days) for production databases. Read Replicas don't help — the DROP TABLE replicates to them."},
 
 // ── DYNAMODB ──
