@@ -43,92 +43,199 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --bg:#0f172a;--surface:#1e293b;--surface2:#334155;
-  --accent:#f59e0b;--blue:#3b82f6;--green:#22c55e;--red:#ef4444;
-  --text:#f1f5f9;--muted:#94a3b8;--border:#475569;--r:12px;
+  --bg:#080f1e;--surface:#111827;--surface2:#1e2a3a;--surface3:#243044;
+  --accent:#f59e0b;--accent2:#f97316;--blue:#3b82f6;--blue2:#6366f1;
+  --green:#22c55e;--red:#ef4444;--teal:#14b8a6;
+  --text:#f1f5f9;--muted:#64748b;--muted2:#94a3b8;--border:#1e2d45;--r:16px;
+  --glow-amber:0 0 24px rgba(245,158,11,.18);
+  --glow-blue:0 0 24px rgba(59,130,246,.18);
+  --card-shadow:0 4px 24px rgba(0,0,0,.4);
 }
-body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;padding-bottom:24px}
-.screen{display:none;padding:16px;max-width:500px;margin:0 auto}
+body{
+  background:var(--bg);
+  background-image:radial-gradient(ellipse at 20% 0%,rgba(59,130,246,.08) 0%,transparent 60%),
+                   radial-gradient(ellipse at 80% 100%,rgba(245,158,11,.06) 0%,transparent 60%);
+  color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;padding-bottom:32px
+}
+.screen{display:none;padding:16px;max-width:520px;margin:0 auto}
 .screen.active{display:block}
-.home-content{padding:16px;max-width:500px;margin:0 auto}
+.home-content{padding:0 16px 16px;max-width:520px;margin:0 auto}
 h2{font-size:18px;font-weight:700}
-/* Header */
-.hdr{display:flex;align-items:center;gap:10px;padding:16px 16px 0;max-width:500px;margin:0 auto 20px}
+
+/* ── Header ── */
+.hdr{display:flex;align-items:center;gap:10px;padding:20px 16px 0;max-width:520px;margin:0 auto 20px}
 .hdr-logo{font-size:26px}
 .hdr h1{font-size:19px;font-weight:700;flex:1}
-.back-btn{background:none;border:none;color:var(--text);font-size:22px;cursor:pointer;padding:4px 8px 4px 0;line-height:1}
-/* Cards & Buttons */
-.card{background:var(--surface);border-radius:var(--r);padding:18px;margin-bottom:14px;border:1px solid var(--border)}
-.btn{display:block;width:100%;padding:15px;border:none;border-radius:var(--r);font-size:16px;font-weight:600;cursor:pointer;margin-bottom:10px;transition:opacity .15s}
-.btn:active{opacity:.75}
-.btn-gold{background:var(--accent);color:#000}
-.btn-blue{background:var(--blue);color:#fff}
-.btn-gray{background:var(--surface2);color:var(--text)}
-.btn-green{background:var(--green);color:#000}
-.btn:disabled{opacity:.4;cursor:default}
-/* Stats grid */
-.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
-.stat{background:var(--surface);border-radius:var(--r);padding:14px;text-align:center;border:1px solid var(--border)}
-.stat-n{font-size:30px;font-weight:700;color:var(--accent)}
-.stat-l{font-size:11px;color:var(--muted);margin-top:3px}
-/* Progress bar */
-.prog-bg{background:var(--surface2);border-radius:999px;height:5px;margin:10px 0 18px}
-.prog{height:5px;border-radius:999px;background:var(--accent);transition:width .3s}
-/* Quiz */
-.q-meta{font-size:12px;color:var(--accent);font-weight:700;margin-bottom:10px;letter-spacing:.3px}
-.q-text{font-size:15px;line-height:1.65;margin-bottom:18px}
-.opt{display:flex;align-items:flex-start;gap:10px;padding:13px 14px;border:2px solid var(--border);border-radius:var(--r);margin-bottom:9px;cursor:pointer;background:var(--surface);transition:border-color .15s,background .15s}
-.opt:active{transform:scale(.985)}
-.opt.sel{border-color:var(--blue);background:rgba(59,130,246,.12)}
-.opt.correct{border-color:var(--green);background:rgba(34,197,94,.12)}
-.opt.wrong{border-color:var(--red);background:rgba(239,68,68,.12)}
-.opt.reveal-correct{border-color:var(--green);background:rgba(34,197,94,.08)}
-.opt-ltr{font-weight:700;font-size:13px;color:var(--muted);min-width:18px;padding-top:1px}
-.opt-txt{font-size:14px;line-height:1.5}
-.expl{background:var(--surface2);border-radius:var(--r);padding:15px;margin-top:14px;font-size:13px;line-height:1.65;display:none}
+.back-btn{background:none;border:none;color:var(--muted2);font-size:22px;cursor:pointer;padding:4px 8px 4px 0;line-height:1;transition:color .15s}
+.back-btn:hover{color:var(--text)}
+
+/* ── Hero banner ── */
+.home-hero{
+  margin:0 16px 20px;padding:22px 20px;
+  background:linear-gradient(135deg,rgba(59,130,246,.15) 0%,rgba(99,102,241,.12) 50%,rgba(245,158,11,.1) 100%);
+  border:1px solid rgba(99,102,241,.25);border-radius:20px;
+  box-shadow:var(--card-shadow);position:relative;overflow:hidden
+}
+.home-hero::before{
+  content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;
+  background:radial-gradient(circle,rgba(245,158,11,.12),transparent 70%);
+  border-radius:50%;pointer-events:none
+}
+.hero-eyebrow{font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--blue);text-transform:uppercase;margin-bottom:6px}
+.hero-title{font-size:22px;font-weight:800;margin-bottom:4px;
+  background:linear-gradient(90deg,var(--text),var(--muted2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:13px;color:var(--muted2);margin-bottom:16px}
+.hero-progress-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px}
+.hero-progress-label span:first-child{color:var(--muted2)}
+.hero-progress-label span:last-child{font-weight:700;color:var(--accent)}
+.hero-prog-bg{background:rgba(255,255,255,.08);border-radius:999px;height:6px}
+.hero-prog{height:6px;border-radius:999px;background:linear-gradient(90deg,var(--blue),var(--accent));transition:width .6s cubic-bezier(.4,0,.2,1)}
+
+/* ── Stat cards ── */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.stat{
+  background:var(--surface);border-radius:var(--r);padding:16px 14px;
+  border:1px solid var(--border);text-align:center;
+  box-shadow:var(--card-shadow);transition:transform .15s,border-color .15s;position:relative;overflow:hidden
+}
+.stat::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--blue),var(--blue2));opacity:0;transition:opacity .2s
+}
+.stat:hover{transform:translateY(-2px);border-color:rgba(59,130,246,.3)}
+.stat:hover::before{opacity:1}
+.stat-icon{font-size:18px;margin-bottom:6px;display:block}
+.stat-n{font-size:28px;font-weight:800;color:var(--accent);line-height:1}
+.stat-l{font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:.3px}
+
+/* ── Section labels ── */
+.section-label{font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin:0 0 10px;padding:0 2px}
+
+/* ── Mode buttons ── */
+.mode-btn{
+  display:flex;align-items:center;gap:14px;width:100%;
+  padding:15px 16px;border:1px solid var(--border);border-radius:var(--r);
+  background:var(--surface);cursor:pointer;margin-bottom:10px;text-align:left;
+  transition:transform .15s,border-color .2s,background .2s,box-shadow .2s;
+  box-shadow:var(--card-shadow)
+}
+.mode-btn:active{transform:scale(.98)}
+.mode-btn:hover{border-color:rgba(255,255,255,.12);background:var(--surface2)}
+.mode-btn.primary{
+  background:linear-gradient(135deg,rgba(245,158,11,.18),rgba(249,115,22,.12));
+  border-color:rgba(245,158,11,.35)
+}
+.mode-btn.primary:hover{box-shadow:var(--glow-amber),var(--card-shadow)}
+.mode-btn.featured{
+  background:linear-gradient(135deg,rgba(59,130,246,.18),rgba(99,102,241,.12));
+  border-color:rgba(59,130,246,.35)
+}
+.mode-btn.featured:hover{box-shadow:var(--glow-blue),var(--card-shadow)}
+.mode-icon{font-size:22px;width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.mode-icon.gold{background:rgba(245,158,11,.15)}
+.mode-icon.blue{background:rgba(59,130,246,.15)}
+.mode-icon.gray{background:rgba(255,255,255,.06)}
+.mode-icon.green{background:rgba(34,197,94,.12)}
+.mode-icon.teal{background:rgba(20,184,166,.12)}
+.mode-icon.red{background:rgba(239,68,68,.12)}
+.mode-icon.purple{background:rgba(99,102,241,.12)}
+.mode-text{flex:1}
+.mode-title{font-size:15px;font-weight:700;color:var(--text);display:block;margin-bottom:2px}
+.mode-desc{font-size:12px;color:var(--muted2);display:block}
+.mode-arrow{color:var(--muted);font-size:16px}
+
+/* ── Cards ── */
+.card{
+  background:var(--surface);border-radius:var(--r);padding:20px;margin-bottom:14px;
+  border:1px solid var(--border);box-shadow:var(--card-shadow)
+}
+.card-title{font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.8px;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:6px}
+
+/* ── Generic buttons (quiz screens) ── */
+.btn{display:block;width:100%;padding:15px;border:none;border-radius:var(--r);font-size:16px;font-weight:600;cursor:pointer;margin-bottom:10px;transition:opacity .15s,transform .1s}
+.btn:active{opacity:.8;transform:scale(.98)}
+.btn-gold{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;box-shadow:0 4px 16px rgba(245,158,11,.3)}
+.btn-blue{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;box-shadow:0 4px 16px rgba(59,130,246,.3)}
+.btn-gray{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-green{background:linear-gradient(135deg,var(--green),var(--teal));color:#000}
+.btn:disabled{opacity:.35;cursor:default;box-shadow:none}
+
+/* ── Progress bar (quiz) ── */
+.prog-bg{background:var(--surface2);border-radius:999px;height:4px;margin:8px 0 16px}
+.prog{height:4px;border-radius:999px;background:linear-gradient(90deg,var(--blue),var(--blue2));transition:width .3s}
+
+/* ── Quiz ── */
+.q-meta{font-size:11px;color:var(--accent);font-weight:700;margin-bottom:10px;letter-spacing:.5px;text-transform:uppercase}
+.q-text{font-size:15px;line-height:1.7;margin-bottom:18px}
+.opt{display:flex;align-items:flex-start;gap:12px;padding:14px 15px;border:1.5px solid var(--border);border-radius:14px;margin-bottom:9px;cursor:pointer;background:var(--surface);transition:border-color .15s,background .15s,transform .1s}
+.opt:active{transform:scale(.99)}
+.opt.sel{border-color:var(--blue);background:rgba(59,130,246,.1)}
+.opt.correct{border-color:var(--green);background:rgba(34,197,94,.1)}
+.opt.wrong{border-color:var(--red);background:rgba(239,68,68,.1)}
+.opt.reveal-correct{border-color:var(--green);background:rgba(34,197,94,.07)}
+.opt-ltr{font-weight:700;font-size:12px;color:var(--muted);min-width:20px;padding-top:1px;background:var(--surface2);border-radius:6px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.opt-txt{font-size:14px;line-height:1.55}
+.expl{background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(249,115,22,.05));border:1px solid rgba(245,158,11,.2);border-radius:var(--r);padding:16px;margin-top:14px;font-size:13px;line-height:1.7;display:none}
 .expl.show{display:block}
 .expl strong{color:var(--accent)}
-/* Dashboard bars */
-.bar-row{margin-bottom:12px}
-.bar-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
-.bar-name{font-size:13px}
+
+/* ── Dashboard bars ── */
+.bar-row{margin-bottom:14px}
+.bar-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.bar-name{font-size:13px;font-weight:500}
 .bar-meta{font-size:11px;color:var(--muted)}
-.bar-bg{background:var(--surface2);border-radius:999px;height:7px}
-.bar-fill{height:7px;border-radius:999px;transition:width .5s}
-/* Proficiency badge */
-.badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px}
-/* Results */
-.score-ring{width:110px;height:110px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 18px;border:4px solid var(--accent)}
-.score-big{font-size:34px;font-weight:700}
+.bar-bg{background:var(--surface2);border-radius:999px;height:8px;overflow:hidden}
+.bar-fill{height:8px;border-radius:999px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+
+/* ── Overall score ring (dashboard) ── */
+.score-ring-wrap{display:flex;flex-direction:column;align-items:center;padding:8px 0 20px}
+.score-ring-svg{filter:drop-shadow(0 0 12px rgba(245,158,11,.25))}
+.score-ring-label{font-size:12px;color:var(--muted2);margin-top:8px;letter-spacing:.5px}
+
+/* ── Proficiency badge ── */
+.badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px}
+
+/* ── Results ── */
+.score-ring{width:120px;height:120px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 20px;border:4px solid var(--accent);box-shadow:0 0 32px rgba(245,158,11,.2)}
+.score-big{font-size:36px;font-weight:800}
 .score-sub{font-size:11px;color:var(--muted)}
-.rev-item{padding:11px 13px;border-radius:8px;background:var(--surface2);margin-bottom:8px;border-left:3px solid}
+.rev-item{padding:11px 13px;border-radius:10px;background:var(--surface2);margin-bottom:8px;border-left:3px solid}
 .rev-q{font-size:12px;margin-bottom:4px;line-height:1.4}
 .rev-a{font-size:11px;color:var(--muted)}
-/* Quiz header bar */
-.quiz-hdr{display:flex;align-items:center;gap:10px;max-width:500px;margin:0 auto;padding:12px 16px 0}
+
+/* ── Quiz header bar ── */
+.quiz-hdr{display:flex;align-items:center;gap:10px;max-width:520px;margin:0 auto;padding:16px 16px 0}
 .quiz-hdr-info{flex:1}
 .q-progress-txt{font-size:12px;color:var(--muted);margin-bottom:4px}
 .live-score{font-size:13px;font-weight:700;color:var(--accent);white-space:nowrap}
-.timer{font-size:13px;font-weight:700;white-space:nowrap;padding:4px 10px;border-radius:999px;background:var(--surface2);display:none}
+.timer{font-size:13px;font-weight:700;white-space:nowrap;padding:5px 11px;border-radius:999px;background:var(--surface2);border:1px solid var(--border);display:none}
 .timer.show{display:block}
-.timer.warn{background:rgba(239,68,68,.2);color:var(--red)}
-/* Study Mode */
-.topic-btn{display:block;width:100%;text-align:left;padding:12px 15px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;cursor:pointer;font-size:14px;color:var(--text);transition:border-color .15s}
+.timer.warn{background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.4);color:var(--red)}
+
+/* ── Study Mode ── */
+.topic-btn{display:block;width:100%;text-align:left;padding:13px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;cursor:pointer;font-size:14px;color:var(--text);transition:border-color .15s,background .15s}
+.topic-btn:hover{background:var(--surface2);border-color:rgba(255,255,255,.1)}
 .topic-btn:active{opacity:.75}
-.topic-btn .tb-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.topic-btn .tb-meta{font-size:11px;color:var(--muted);margin-top:3px}
 .study-q{background:var(--surface);border-radius:var(--r);padding:16px;margin-bottom:12px;border:1px solid var(--border)}
 .study-q .s-q{font-size:14px;line-height:1.6;margin-bottom:12px;font-weight:600}
-.study-opt{display:flex;gap:8px;padding:9px 12px;border-radius:8px;margin-bottom:6px;font-size:13px;line-height:1.45}
-.study-opt.s-correct{background:rgba(34,197,94,.15);border:1px solid var(--green)}
+.study-opt{display:flex;gap:8px;padding:9px 12px;border-radius:10px;margin-bottom:6px;font-size:13px;line-height:1.45}
+.study-opt.s-correct{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3)}
 .study-opt.s-other{background:var(--surface2);border:1px solid var(--border)}
-.study-expl{font-size:12px;color:var(--muted);line-height:1.6;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.study-expl{font-size:12px;color:var(--muted2);line-height:1.65;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
 .study-expl strong{color:var(--accent)}
-/* Bookmark */
+
+/* ── Bookmark ── */
 .bk-btn{background:none;border:none;font-size:20px;cursor:pointer;padding:4px;line-height:1;float:right;margin-top:-2px}
-/* Score History */
-.hist-bar-wrap{display:flex;align-items:flex-end;gap:4px;height:48px;margin-top:8px}
-.hist-bar{flex:1;border-radius:4px 4px 0 0;min-width:14px;position:relative;transition:height .4s}
+
+/* ── Score History ── */
+.hist-bar-wrap{display:flex;align-items:flex-end;gap:4px;height:56px;margin-top:10px}
+.hist-bar{flex:1;border-radius:6px 6px 0 0;min-width:14px;position:relative;transition:height .4s}
 .hist-bar-lbl{font-size:9px;text-align:center;margin-top:3px;color:var(--muted)}
+
+/* ── Weak areas card ── */
+.weak-card{background:linear-gradient(135deg,rgba(239,68,68,.1),rgba(239,68,68,.05));border:1px solid rgba(239,68,68,.25)}
 </style>
 </head>
 <body>
@@ -136,15 +243,46 @@ h2{font-size:18px;font-weight:700}
 <!-- ===== HOME ===== -->
 <div id="home" class="screen active">
   <div class="hdr"><span class="hdr-logo">☁️</span><h1>AWS SAA-C03 Prep</h1></div>
+  <div id="home-hero-wrap"></div>
   <div class="home-content">
     <div class="stats" id="home-stats"></div>
-    <button class="btn btn-gold" onclick="startQuiz('mini')">📝 Daily Mini Quiz &nbsp;(10 Questions)</button>
-    <button class="btn btn-blue" onclick="startQuiz('full')">🎯 Full Exam Practice &nbsp;(65 Questions)</button>
-    <button class="btn btn-gray" onclick="startQuiz('extra')">➕ Extra Practice &nbsp;(10 More Questions)</button>
-    <button class="btn btn-gray" onclick="goTo('dash')">📊 Proficiency Dashboard</button>
-    <button class="btn btn-gray" onclick="goStudy()">📖 Study Mode</button>
-    <button class="btn btn-gray" id="weak-btn" onclick="startQuiz('weak')" style="display:none">🎯 Practice Weak Areas</button>
-    <button class="btn btn-gray" id="bk-btn" onclick="startQuiz('bookmarks')" style="display:none">🔖 Review Bookmarked (<span id="bk-count">0</span>)</button>
+    <div class="section-label">Quick Start</div>
+    <button class="mode-btn primary" onclick="startQuiz('mini')">
+      <div class="mode-icon gold">📝</div>
+      <div class="mode-text"><span class="mode-title">Daily Mini Quiz</span><span class="mode-desc">10 random questions · ~10 min</span></div>
+      <span class="mode-arrow">›</span>
+    </button>
+    <button class="mode-btn featured" onclick="startQuiz('full')">
+      <div class="mode-icon blue">🎯</div>
+      <div class="mode-text"><span class="mode-title">Full Exam Practice</span><span class="mode-desc">65 questions · 130 min timer</span></div>
+      <span class="mode-arrow">›</span>
+    </button>
+    <div class="section-label" style="margin-top:16px">Practice & Study</div>
+    <button class="mode-btn" onclick="startQuiz('extra')">
+      <div class="mode-icon gray">➕</div>
+      <div class="mode-text"><span class="mode-title">Extra Practice</span><span class="mode-desc">10 more random questions</span></div>
+      <span class="mode-arrow">›</span>
+    </button>
+    <button class="mode-btn" onclick="goTo('dash')">
+      <div class="mode-icon teal">📊</div>
+      <div class="mode-text"><span class="mode-title">Proficiency Dashboard</span><span class="mode-desc">Track progress by domain & topic</span></div>
+      <span class="mode-arrow">›</span>
+    </button>
+    <button class="mode-btn" onclick="goStudy()">
+      <div class="mode-icon purple">📖</div>
+      <div class="mode-text"><span class="mode-title">Study Mode</span><span class="mode-desc">Browse topics with answers visible</span></div>
+      <span class="mode-arrow">›</span>
+    </button>
+    <button class="mode-btn" id="weak-btn" onclick="startQuiz('weak')" style="display:none">
+      <div class="mode-icon red">⚠️</div>
+      <div class="mode-text"><span class="mode-title">Practice Weak Areas</span><span class="mode-desc">Focus on topics below 60%</span></div>
+      <span class="mode-arrow">›</span>
+    </button>
+    <button class="mode-btn" id="bk-btn" onclick="startQuiz('bookmarks')" style="display:none">
+      <div class="mode-icon gold">🔖</div>
+      <div class="mode-text"><span class="mode-title">Review Bookmarked</span><span class="mode-desc"><span id="bk-count">0</span> saved questions</span></div>
+      <span class="mode-arrow">›</span>
+    </button>
   </div>
 </div>
 
@@ -1969,17 +2107,52 @@ function touchStreak() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function renderHome() {
   const p = pct(S.correct, S.answered);
+  const total = 290;
+  const pctDone = Math.round(((S.answered||0)/total)*100);
+
+  // Hero banner
+  document.getElementById('home-hero-wrap').innerHTML = `
+    <div class="home-hero">
+      <div class="hero-eyebrow">AWS Solution Architect Associate</div>
+      <div class="hero-title">SAA-C03 Exam Prep</div>
+      <div class="hero-sub">280 questions across all 4 exam domains</div>
+      <div class="hero-progress-label">
+        <span>Questions answered</span>
+        <span>${S.answered||0} / ${total}</span>
+      </div>
+      <div class="hero-prog-bg"><div class="hero-prog" style="width:${pctDone}%"></div></div>
+    </div>`;
+
+  // Stats
+  const scoreColor = p!==null ? colorFor(p) : 'var(--accent)';
   document.getElementById('home-stats').innerHTML = `
-    <div class="stat"><div class="stat-n">${S.answered||0}</div><div class="stat-l">Questions Answered</div></div>
-    <div class="stat"><div class="stat-n" style="color:${colorFor(p)}">${p!==null?p+'%':'—'}</div><div class="stat-l">Overall Score</div></div>
-    <div class="stat"><div class="stat-n">${S.streak||0}</div><div class="stat-l">Day Streak 🔥</div></div>
-    <div class="stat"><div class="stat-n">${S.quizzes||0}</div><div class="stat-l">Quizzes Taken</div></div>`;
+    <div class="stat">
+      <span class="stat-icon">✅</span>
+      <div class="stat-n">${S.answered||0}</div>
+      <div class="stat-l">Answered</div>
+    </div>
+    <div class="stat">
+      <span class="stat-icon">🎯</span>
+      <div class="stat-n" style="color:${scoreColor}">${p!==null?p+'%':'—'}</div>
+      <div class="stat-l">Score</div>
+    </div>
+    <div class="stat">
+      <span class="stat-icon">🔥</span>
+      <div class="stat-n">${S.streak||0}</div>
+      <div class="stat-l">Day Streak</div>
+    </div>
+    <div class="stat">
+      <span class="stat-icon">📋</span>
+      <div class="stat-n">${S.quizzes||0}</div>
+      <div class="stat-l">Quizzes</div>
+    </div>`;
+
   // Show Weak Areas button if any topic is below 60%
   const hasWeak = TOPICS.some(t => { const ts=S.topicStats?.[t]; return ts&&ts.t>0&&pct(ts.c,ts.t)<60; });
-  document.getElementById('weak-btn').style.display = hasWeak ? 'block' : 'none';
+  document.getElementById('weak-btn').style.display = hasWeak ? 'flex' : 'none';
   // Show Bookmarks button
   const bkCount = (S.bookmarks||[]).length;
-  document.getElementById('bk-btn').style.display = bkCount > 0 ? 'block' : 'none';
+  document.getElementById('bk-btn').style.display = bkCount > 0 ? 'flex' : 'none';
   document.getElementById('bk-count').textContent = bkCount;
 }
 
@@ -1989,42 +2162,59 @@ function renderHome() {
 function renderDash() {
   let h = '';
   const op = pct(S.correct, S.answered);
+  const col = colorFor(op);
 
-  // Overall
+  // Overall score ring (SVG)
+  const r = 52, cx = 68, cy = 68, stroke = 9;
+  const circ = 2 * Math.PI * r;
+  const filled = op !== null ? (op / 100) * circ : 0;
   h += `<div class="card" style="text-align:center">
-    <div style="font-size:11px;color:var(--muted);letter-spacing:.5px;margin-bottom:6px">OVERALL PROFICIENCY</div>
-    <div style="font-size:52px;font-weight:700;color:${colorFor(op)}">${op!==null?op+'%':'—'}</div>
-    <div style="font-size:12px;color:var(--muted);margin-top:4px">${S.answered} questions answered · ${labelFor(op)}</div>
+    <div class="card-title" style="justify-content:center">Overall Proficiency</div>
+    <div class="score-ring-wrap">
+      <svg class="score-ring-svg" width="136" height="136" viewBox="0 0 136 136">
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--surface2)" stroke-width="${stroke}"/>
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="${stroke}"
+          stroke-dasharray="${filled} ${circ}" stroke-dashoffset="${circ/4}"
+          stroke-linecap="round" style="transition:stroke-dasharray .8s cubic-bezier(.4,0,.2,1)"/>
+        <text x="${cx}" y="${cy-8}" text-anchor="middle" fill="${col}" font-size="26" font-weight="800" font-family="-apple-system,sans-serif">${op!==null?op+'%':'—'}</text>
+        <text x="${cx}" y="${cy+14}" text-anchor="middle" fill="var(--muted)" font-size="11" font-family="-apple-system,sans-serif">${labelFor(op)}</text>
+      </svg>
+      <div class="score-ring-label">${S.answered||0} questions answered</div>
+    </div>
   </div>`;
 
   // By Domain
-  h += `<div class="card"><div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:14px;letter-spacing:.3px">BY EXAM DOMAIN</div>`;
+  h += `<div class="card"><div class="card-title">📡 By Exam Domain</div>`;
   DOMAINS.forEach(d => {
     const ds = S.domainStats?.[d]||{c:0,t:0};
     const p = pct(ds.c,ds.t);
+    const dc = colorFor(p);
+    const gradMap = {null:'var(--surface2)'};
+    const grad = p===null ? 'var(--surface2)' : p>=80 ? 'linear-gradient(90deg,#22c55e,#14b8a6)' : p>=60 ? 'linear-gradient(90deg,#3b82f6,#6366f1)' : p>=40 ? 'linear-gradient(90deg,#f59e0b,#f97316)' : 'linear-gradient(90deg,#ef4444,#f97316)';
     h += `<div class="bar-row">
       <div class="bar-label">
-        <span class="bar-name" style="font-weight:600">${d}</span>
-        <span class="bar-meta">${ds.t} answered · ${p!==null?p+'%':'—'}</span>
+        <span class="bar-name" style="font-weight:600">${d.replace('Design ','')}</span>
+        <span class="bar-meta">${ds.t} answered · <strong style="color:${dc}">${p!==null?p+'%':'—'}</strong></span>
       </div>
-      <div class="bar-bg"><div class="bar-fill" style="width:${p||0}%;background:${colorFor(p)}"></div></div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${p||0}%;background:${grad}"></div></div>
     </div>`;
   });
   h += '</div>';
 
   // By Topic
-  h += `<div class="card"><div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:14px;letter-spacing:.3px">BY TOPIC</div>`;
+  h += `<div class="card"><div class="card-title">🏷️ By Topic</div>`;
   TOPICS.forEach(t => {
     const ts = S.topicStats?.[t]||{c:0,t:0};
     const p = pct(ts.c,ts.t);
-    const col = colorFor(p);
+    const tc = colorFor(p);
+    const tgrad = p===null ? 'var(--surface2)' : p>=80 ? 'linear-gradient(90deg,#22c55e,#14b8a6)' : p>=60 ? 'linear-gradient(90deg,#3b82f6,#6366f1)' : p>=40 ? 'linear-gradient(90deg,#f59e0b,#f97316)' : 'linear-gradient(90deg,#ef4444,#f97316)';
     h += `<div class="bar-row">
       <div class="bar-label">
         <span class="bar-name">${t}</span>
-        <span class="badge" style="background:${col}22;color:${col}">${labelFor(p).replace(/ .*/,'')}</span>
+        <span class="badge" style="background:${tc}22;color:${tc}">${labelFor(p).replace(/ .*/,'')}</span>
       </div>
-      <div class="bar-bg"><div class="bar-fill" style="width:${p||0}%;background:${col}"></div></div>
-      <div style="font-size:10px;color:var(--muted);margin-top:3px">${ts.t} answered · ${p!==null?p+'%':'—'}</div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${p||0}%;background:${tgrad}"></div></div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px">${ts.t} answered · ${p!==null?p+'%':'—'}</div>
     </div>`;
   });
   h += '</div>';
@@ -2032,20 +2222,20 @@ function renderDash() {
   // Weak areas callout
   const weak = TOPICS.filter(t => { const ts=S.topicStats?.[t]; return ts&&ts.t>0&&pct(ts.c,ts.t)<60; });
   if (weak.length) {
-    h += `<div class="card" style="border-color:var(--red)">
-      <div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:10px">⚠️ Priority Focus Areas</div>`;
+    h += `<div class="card weak-card">
+      <div class="card-title" style="color:var(--red)">⚠️ Priority Focus Areas</div>`;
     weak.forEach(t => {
       const ts=S.topicStats[t];
-      h += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+      h += `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(239,68,68,.15)">
         <span style="font-size:13px">${t}</span>
-        <span style="color:var(--red);font-weight:700;font-size:13px">${pct(ts.c,ts.t)}%</span>
+        <span style="color:var(--red);font-weight:800;font-size:14px">${pct(ts.c,ts.t)}%</span>
       </div>`;
     });
     h += '</div>';
   }
 
-  h += `<div style="text-align:center;padding:12px;font-size:11px;color:var(--muted)">
-    v3 · 100 questions across all 4 SAA-C03 domains
+  h += `<div style="text-align:center;padding:12px 0 4px;font-size:11px;color:var(--muted)">
+    280 questions · 4 SAA-C03 domains
   </div>`;
 
   document.getElementById('dash-body').innerHTML = h;
