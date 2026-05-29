@@ -380,7 +380,7 @@ h2{font-size:18px;font-weight:700}
 
 <script>
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// QUESTION BANK  (320 exam-quality questions)
+// QUESTION BANK  (345 exam-quality questions)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const Q = [
 // ── DOMAIN 1: SECURE ARCHITECTURES ──
@@ -2330,7 +2330,132 @@ e:"<strong>Correct: Lazy loading with ElastiCache for Redis.</strong> Lazy loadi
 q:"A company has 50 AWS accounts in an Organization with S3 usage growing 15% monthly. The finance team cannot determine which teams or applications are driving storage growth or which accounts have the most storage waste (empty buckets, non-current versions, incomplete multipart uploads). They want an organization-wide view of S3 usage and cost allocation by team. What combination of AWS tools provides this visibility with MINIMAL setup?",
 o:["Enable AWS Cost Explorer and filter by S3 service in each account individually","Enable S3 Storage Lens with organization-level configuration and advanced metrics; enforce cost allocation tags (Team tag) via AWS Organizations Tag Policies","Run AWS Trusted Advisor across all accounts to identify underutilized S3 buckets","Build a custom solution: enable S3 inventory on all buckets, export to a central S3 bucket, query with Athena"],
 c:1,
-e:"<strong>Correct: S3 Storage Lens + Organization Tag Policies.</strong> S3 Storage Lens: organization-level configuration aggregates metrics across all 50 accounts and all buckets in a single dashboard — no per-account setup. Metrics include: total storage, object count, requests, data retrieval, non-current version bytes (versioning waste), incomplete multipart upload bytes. Advanced metrics ($0.20/million objects/month): activity metrics, advanced cost optimization metrics (StorageBytes by storage class). Export to S3 + Athena for custom queries. Tag Policies + cost allocation tags: enforce Team tag on all S3 buckets; enable Team as a cost allocation tag in Billing; view S3 cost by team in Cost Explorer. Combined result: operations team sees storage waste; finance team allocates costs by team. Cost Explorer per-account (A): requires manual per-account review; no aggregation of S3-specific operational metrics (no multipart upload analysis). Trusted Advisor (C): limited S3 checks; not organization-aggregated; doesn't track growth trends. Custom Athena solution (D): works but requires significant setup (S3 Inventory on 50 accounts × many buckets, Glue catalog, Athena queries) — high operational overhead vs Storage Lens."}
+e:"<strong>Correct: S3 Storage Lens + Organization Tag Policies.</strong> S3 Storage Lens: organization-level configuration aggregates metrics across all 50 accounts and all buckets in a single dashboard — no per-account setup. Metrics include: total storage, object count, requests, data retrieval, non-current version bytes (versioning waste), incomplete multipart upload bytes. Advanced metrics ($0.20/million objects/month): activity metrics, advanced cost optimization metrics (StorageBytes by storage class). Export to S3 + Athena for custom queries. Tag Policies + cost allocation tags: enforce Team tag on all S3 buckets; enable Team as a cost allocation tag in Billing; view S3 cost by team in Cost Explorer. Combined result: operations team sees storage waste; finance team allocates costs by team. Cost Explorer per-account (A): requires manual per-account review; no aggregation of S3-specific operational metrics (no multipart upload analysis). Trusted Advisor (C): limited S3 checks; not organization-aggregated; doesn't track growth trends. Custom Athena solution (D): works but requires significant setup (S3 Inventory on 50 accounts × many buckets, Glue catalog, Athena queries) — high operational overhead vs Storage Lens."},
+{id:321,domain:"Cost-Optimized Architectures",topic:"Serverless",sub:"Lambda Power Tuning",
+q:"A company runs an AWS Lambda function that processes images uploaded to Amazon S3. The function is configured with 512 MB of memory and takes an average of 4 seconds per invocation. The function is invoked 10 million times per month. A solutions architect wants to reduce the monthly Lambda cost without changing the function code. What is the MOST effective approach?",
+o:["Increase the Lambda function memory to 3008 MB to maximize CPU and reduce duration","Decrease the Lambda function memory to 128 MB to reduce the memory-hour cost","Use the AWS Lambda Power Tuning tool to identify the optimal memory setting that minimizes the cost-duration product","Convert the Lambda function to a container image to reduce cold start overhead"],
+c:2,
+e:"<strong>Correct: AWS Lambda Power Tuning.</strong> Lambda charges based on the number of requests and the duration × memory (GB-seconds). Increasing memory also increases CPU, which often reduces duration — but the optimal point varies by workload. The open-source AWS Lambda Power Tuning tool (deployed as a Step Functions state machine) invokes the function at different memory levels and measures both duration and cost. It produces a cost vs. speed chart, allowing selection of the memory that minimizes GB-seconds. <strong>Why not A:</strong> Blindly increasing memory to max may reduce duration but could increase overall cost if the GB-second reduction is not proportional. <strong>Why not B:</strong> Reducing memory without testing may increase duration so much that total GB-seconds (and cost) increase. <strong>Why not D:</strong> Container images don't change the memory-duration cost model; they affect cold start packaging, not runtime efficiency."},
+{id:322,domain:"Cost-Optimized Architectures",topic:"Containers",sub:"ECS Fargate Spot",
+q:"A company runs a data processing pipeline on Amazon ECS with AWS Fargate. The pipeline processes jobs submitted throughout the day, and each job takes between 10 and 30 minutes to complete. Jobs can tolerate interruptions as long as incomplete work is checkpointed and retried. The company wants to reduce Fargate compute costs by at least 50%. What should the solutions architect recommend?",
+o:["Migrate the ECS tasks to Amazon EC2 instances with Spot Instance purchasing","Configure the ECS service to use Fargate Spot capacity providers with a base of 0 Fargate On-Demand tasks","Use AWS Batch with managed compute environments backed by EC2 Spot Instances","Enable ECS Task placement strategies to bin-pack tasks onto fewer underlying instances"],
+c:1,
+e:"<strong>Correct: Fargate Spot capacity providers.</strong> Fargate Spot offers up to 70% discount over standard Fargate pricing by using spare AWS capacity. Tasks can be interrupted with a 2-minute warning. Since the pipeline checkpoints progress and retries, interruptions are tolerable. Configuring a capacity provider strategy with Fargate Spot as the primary (weight > 0) and Fargate On-Demand as fallback (base=0) maximizes savings while maintaining availability. <strong>Why not A:</strong> Migrating to EC2 Spot works but requires managing EC2 instances, AMIs, and cluster capacity — significantly higher operational overhead vs Fargate Spot. <strong>Why not C:</strong> AWS Batch is a valid option for batch workloads, but the question asks about reducing cost on the existing ECS pipeline — Fargate Spot achieves this without re-architecting. <strong>Why not D:</strong> Bin-packing is a placement strategy for EC2 launch type and reduces instance count; it does not apply to Fargate (which abstracts the underlying hosts) and doesn't reduce per-task pricing."},
+{id:323,domain:"Cost-Optimized Architectures",topic:"Compute",sub:"Graviton Instances",
+q:"A company runs a web application on a fleet of 50 Amazon EC2 m5.xlarge On-Demand instances in a single AWS Region. The application is CPU-bound, and the workload is steady throughout the day. A solutions architect is tasked with reducing EC2 compute costs by at least 20% without changing the application tier architecture. The application runs on Amazon Linux 2. What combination of changes provides the greatest cost reduction with LEAST risk?",
+o:["Replace m5.xlarge instances with m6g.xlarge (Graviton2) instances and convert to 1-year No-Upfront Reserved Instances","Replace m5.xlarge instances with t3.xlarge instances to use burstable performance","Replace On-Demand m5.xlarge instances with Spot m5.xlarge instances using a Spot Fleet with capacity-optimized strategy","Purchase 3-year All-Upfront Reserved Instances for m5.xlarge instances"],
+c:0,
+e:"<strong>Correct: Graviton2 + 1-year Reserved Instances.</strong> Amazon m6g.xlarge (Graviton2) instances are up to 40% cheaper than equivalent m5.xlarge instances for the same or better performance on Amazon Linux 2 workloads. Combining with 1-year No-Upfront Reserved Instances adds ~40% savings over On-Demand. Together, the savings easily exceed 20%. Amazon Linux 2 supports Graviton2 natively with no code changes required for most applications. <strong>Why not B:</strong> t3 instances use a burstable CPU credit model — under sustained CPU-bound load they throttle, making them unsuitable for this workload type. <strong>Why not C:</strong> Spot Instances can be interrupted at any time; for a steady production web tier without checkpointing, interruptions would cause user-visible outages. <strong>Why not D:</strong> 3-year All-Upfront RIs for m5.xlarge maximize Reserved Instance savings (~60%) but don't capture the additional Graviton2 discount. The combination of Graviton2 + 1-year RI typically beats a 3-year RI on m5 alone, with lower commitment risk."},
+{id:324,domain:"Cost-Optimized Architectures",topic:"Databases",sub:"RDS Proxy Cost Efficiency",
+q:"A company has a serverless application with AWS Lambda functions that connect to an Amazon RDS for PostgreSQL database. During peak hours, the application scales to 500 concurrent Lambda invocations, each opening a new database connection. The RDS instance is frequently running out of connections, causing errors. The database team wants to fix the connection exhaustion problem. A solutions architect notes the solution must also be cost-effective. What should the solutions architect recommend?",
+o:["Increase the RDS instance size to db.r6g.4xlarge to support more connections","Enable RDS Multi-AZ to distribute read connections across the standby replica","Add Amazon RDS Proxy between Lambda and RDS to pool and reuse database connections","Create an ElastiCache for Redis cluster to cache database query results and reduce connections"],
+c:2,
+e:"<strong>Correct: Amazon RDS Proxy.</strong> RDS Proxy maintains a pool of database connections and multiplexes thousands of Lambda connections into a much smaller set of actual database connections. For serverless workloads, this is the canonical solution to connection exhaustion. Cost-effectiveness: RDS Proxy costs ~$0.015/GB of database capacity per hour — typically far less than upsizing the RDS instance. It also improves failover time (60-second failover becomes near-instant for Lambda connections). <strong>Why not A:</strong> Upsizing the RDS instance increases max connections (max_connections scales with RAM) but is expensive and doesn't address the architectural problem of ephemeral Lambda functions opening/closing connections. <strong>Why not B:</strong> The RDS standby replica in Multi-AZ does not serve read traffic — it is only a failover target. This would not help with connection count. <strong>Why not D:</strong> ElastiCache reduces read query load but does not solve write connection exhaustion or connection pooling for all query types. It also adds architectural complexity and cost without directly addressing the problem."},
+{id:325,domain:"Cost-Optimized Architectures",topic:"Storage",sub:"S3 Incomplete Multipart Upload Cleanup",
+q:"A company's monthly AWS bill shows Amazon S3 storage costs growing 25% month-over-month even though the amount of finalized objects has grown only 5%. An audit reveals that many applications upload large files using the S3 multipart upload API but frequently fail mid-upload, leaving incomplete multipart upload parts that accumulate in storage. The company wants to eliminate this waste automatically. What is the MOST operationally efficient solution?",
+o:["Write an AWS Lambda function that runs nightly using the ListMultipartUploads API to delete incomplete uploads older than 7 days","Configure an S3 Lifecycle policy on each bucket with an AbortIncompleteMultipartUpload action set to 7 days","Enable S3 Storage Lens to detect and automatically clean up incomplete multipart uploads","Enable S3 Versioning and configure a lifecycle rule to expire non-current versions older than 7 days"],
+c:1,
+e:"<strong>Correct: S3 Lifecycle AbortIncompleteMultipartUpload action.</strong> S3 Lifecycle policies support a native AbortIncompleteMultipartUpload action that automatically cancels any multipart upload that has not completed within a specified number of days, freeing all associated part storage. This requires no code, no Lambda, and runs fully managed by S3. Setting 7 days balances cleanup speed with allowing time for legitimate slow uploads to finish. <strong>Why not A:</strong> A Lambda function achieves the same result but requires development, maintenance, scheduling, and IAM permissions — far higher operational overhead when a native lifecycle action exists. <strong>Why not B (none):</strong> This IS the correct answer. <strong>Why not C:</strong> S3 Storage Lens provides visibility into incomplete multipart uploads (metric: IncompleteMultipartUploadBytes) but does not automatically clean them up — it is a reporting tool only. <strong>Why not D:</strong> S3 Versioning lifecycle rules expire old object versions, which is a separate concern from incomplete multipart uploads. Non-current version expiration would not affect in-progress or abandoned uploads."},
+{id:326,domain:"Cost-Optimized Architectures",topic:"Networking",sub:"Transit Gateway vs VPC Peering",
+q:"A company has 8 AWS VPCs in the same AWS Region that need full mesh connectivity. Currently each VPC is connected via VPC peering, requiring 28 peering connections. The network team finds the full-mesh peering model difficult to manage. A solutions architect is evaluating AWS Transit Gateway to simplify connectivity. The company transfers approximately 500 GB of data per month between VPCs. What is the PRIMARY cost consideration when choosing between the current full-mesh VPC peering and AWS Transit Gateway?",
+o:["VPC peering has no data transfer charge within the same Region; Transit Gateway charges $0.02/GB processed plus $0.05/hour per attachment — making Transit Gateway more expensive for this traffic volume","Transit Gateway is always cheaper than VPC peering because it reduces the number of peering connections from 28 to 1 hub","VPC peering charges $0.01/GB for intra-Region transfers; Transit Gateway has no data processing charge","Transit Gateway charges apply only for cross-Region traffic; same-Region traffic between VPCs is always free regardless of connectivity model"],
+c:0,
+e:"<strong>Correct: VPC peering is free within the same AZ; Transit Gateway has per-GB and per-hour charges.</strong> VPC peering data transfer within the same Availability Zone is FREE. Between AZs in the same Region: $0.01/GB. Transit Gateway charges: $0.05/hour per VPC attachment (8 VPCs = $0.40/hour = ~$292/month) plus $0.02/GB processed. For 500 GB/month: TGW data charge = $10; attachment charge = ~$292; total ~$302/month. This exceeds the cost of 28 peering connections (no monthly fee, minimal data transfer cost). The tradeoff is operational simplicity vs. cost — TGW is simpler but more expensive at lower traffic volumes. <strong>Why not B:</strong> Transit Gateway is often more expensive at low-to-medium traffic volumes due to per-attachment fees. <strong>Why not C:</strong> VPC peering within the same AZ is free; between AZs is $0.01/GB. Transit Gateway does charge $0.02/GB. <strong>Why not D:</strong> Transit Gateway charges apply to all traffic processed, including same-Region traffic."},
+{id:327,domain:"Cost-Optimized Architectures",topic:"Analytics",sub:"Redshift vs Athena for Ad Hoc Queries",
+q:"A company stores 10 TB of log data in Amazon S3 in Apache Parquet format, partitioned by date. Data analysts run ad hoc SQL queries against this data a few times per day to investigate issues. Queries are unpredictable in frequency and complexity. The company currently has no dedicated analytics infrastructure. A solutions architect must recommend the MOST cost-effective solution that minimizes infrastructure management overhead.",
+o:["Provision an Amazon Redshift cluster with ra3.xlplus nodes and load the Parquet data into Redshift tables","Use Amazon Athena with an AWS Glue Data Catalog table pointing to the S3 Parquet data","Deploy an Amazon EMR cluster with Apache Spark SQL to query the Parquet files on demand","Load the data into Amazon RDS for PostgreSQL and use SQL queries for analysis"],
+c:1,
+e:"<strong>Correct: Amazon Athena.</strong> Athena is a serverless, pay-per-query service that queries data directly in S3. It natively supports Parquet (columnar format), and S3 partitioning further reduces data scanned. Cost: $5 per TB scanned — with date partitions and Parquet compression, effective cost per query is typically cents. No infrastructure to provision or manage. For infrequent ad hoc queries, Athena is almost always the most cost-effective starting point. <strong>Why not A:</strong> Redshift clusters run continuously (even when not querying), costing thousands of dollars per month for ra3 nodes — this is far more expensive than Athena for a few queries per day. Redshift is better for high-frequency, complex analytical workloads with dedicated users. <strong>Why not C:</strong> EMR clusters must be provisioned, and even transient clusters take time to start. Management overhead is high, and per-query cost exceeds Athena for ad hoc use. <strong>Why not D:</strong> RDS for PostgreSQL is an OLTP database not designed for analytical queries over 10 TB of S3 data. Loading 10 TB into RDS requires ETL infrastructure and would be extremely slow for large scans."},
+{id:328,domain:"Cost-Optimized Architectures",topic:"Compute",sub:"Scheduled Auto Scaling",
+q:"A company runs a fleet of Amazon EC2 instances behind an Application Load Balancer to serve a B2B SaaS application. Traffic analysis shows that usage follows a highly predictable pattern: workloads peak at 9 AM–6 PM on weekdays and are near-zero on nights and weekends. The company is paying for 20 instances continuously. A solutions architect wants to reduce EC2 costs while ensuring capacity is available before peak hours begin. What is the MOST cost-effective approach?",
+o:["Use an Auto Scaling group with Target Tracking scaling based on average CPU utilization","Use an Auto Scaling group with Scheduled Scaling actions to scale out before 9 AM on weekdays and scale in after 6 PM","Purchase Reserved Instances for the baseline capacity and use On-Demand for additional peak capacity","Use Amazon EC2 Spot Instances for all application instances and set a maximum Spot price"],
+c:1,
+e:"<strong>Correct: Scheduled Auto Scaling actions.</strong> Since traffic is highly predictable (weekday business hours only), Scheduled Scaling is the optimal approach. You define a cron-based schedule: scale out to peak capacity before 9 AM weekdays (ensuring capacity is ready before traffic arrives) and scale in to a small baseline after 6 PM. This proactively matches capacity to the known pattern, avoiding both under-provisioning and the continuous cost of 20 running instances on nights/weekends. <strong>Why not A:</strong> Target Tracking reacts to actual load — it scales out after CPU rises, which means there is a lag before capacity arrives. For predictable patterns, scheduled scaling is more appropriate and ensures warm capacity before the ramp. <strong>Why not C:</strong> Reserved Instances reduce the per-hour price but do NOT automatically turn instances on/off — you still pay for running instances on nights/weekends. Scheduling reduces the number of running instances, saving more. <strong>Why not D:</strong> Spot Instances can be interrupted, causing availability issues for a production SaaS application without specific interruption-handling design."},
+{id:329,domain:"Cost-Optimized Architectures",topic:"Storage",sub:"EFS Infrequent Access",
+q:"A company uses Amazon EFS to provide shared file storage for a fleet of Amazon EC2 instances running a content management system. A storage audit shows that 80% of the files stored in EFS have not been accessed in over 30 days. The company pays the EFS Standard storage rate for all data. A solutions architect wants to reduce EFS storage costs without changing how the application accesses files. What should the solutions architect do?",
+o:["Migrate infrequently accessed files to Amazon S3 Standard-Infrequent Access using an AWS DataSync job","Enable EFS Intelligent-Tiering, which automatically moves files not accessed for 30 days to EFS Infrequent Access storage class","Create a second EFS file system for archival data and manually move old files using a Lambda function","Use AWS Storage Gateway to serve the infrequently accessed files from on-premises tape storage"],
+c:1,
+e:"<strong>Correct: EFS Intelligent-Tiering (EFS-IA).</strong> EFS offers a lifecycle management feature (Intelligent-Tiering) that automatically moves files to the EFS Infrequent Access (EFS-IA) storage class when they haven't been accessed for a configurable period (7, 14, 30, 60, or 90 days). EFS-IA costs up to 92% less than EFS Standard. Crucially, access to EFS-IA files is transparent — the application uses the same file path and EFS API; there is no code change required. Files are automatically moved back to Standard if accessed again. <strong>Why not A:</strong> Migrating to S3 requires application changes — S3 uses an object API (PUT/GET), not a POSIX file system API. This would require significant code modification. <strong>Why not C:</strong> A second EFS file system requires manual or automated file movement and doesn't provide transparent access via the original paths without additional tooling. <strong>Why not D:</strong> Storage Gateway backed by tape is for archival use cases where long retrieval times are acceptable — not appropriate for an active CMS where files may be accessed unpredictably."},
+{id:330,domain:"Cost-Optimized Architectures",topic:"Security",sub:"SSM Parameter Store vs Secrets Manager",
+q:"A company is building a new microservices application on AWS. Each microservice needs to retrieve configuration values such as database connection strings, API endpoints, and feature flags at startup. Some configuration values are sensitive credentials that require automatic rotation every 30 days. The team wants to minimize costs while meeting security requirements. What is the MOST cost-effective approach?",
+o:["Store all configuration in AWS Secrets Manager for consistency, using automatic rotation for all parameters","Store non-sensitive configuration in AWS Systems Manager Parameter Store (Standard tier) and store sensitive credentials that require rotation in AWS Secrets Manager","Store all configuration in environment variables within the microservice deployment configuration","Store all configuration in Amazon S3 with server-side encryption and use IAM policies to control access"],
+c:1,
+e:"<strong>Correct: SSM Parameter Store for non-sensitive + Secrets Manager for credentials requiring rotation.</strong> AWS SSM Parameter Store Standard tier is free for up to 10,000 parameters with no charge for standard API throughput — ideal for non-sensitive configuration like endpoints, feature flags, and connection strings. AWS Secrets Manager charges ~$0.40/secret/month plus $0.05 per 10,000 API calls, but provides built-in automatic rotation with Lambda integration — essential for the 30-day credential rotation requirement. Using each service where it provides unique value minimizes cost. <strong>Why not A:</strong> Storing all configuration in Secrets Manager works but is unnecessarily expensive — paying $0.40/secret/month for non-rotating, non-sensitive configuration values when Parameter Store is free. <strong>Why not C:</strong> Environment variables require redeployment to update configuration values and are exposed in plain text in deployment configs — not suitable for secrets. <strong>Why not D:</strong> S3 can store configuration but lacks automatic rotation, versioning, and the purpose-built secret management features (access auditing, automatic rotation) required for credential management."},
+{id:331,domain:"Cost-Optimized Architectures",topic:"Serverless",sub:"Compute Savings Plans for Lambda",
+q:"A company runs a mix of workloads on AWS: Amazon EC2 instances for their web tier, AWS Lambda functions for event processing, and AWS Fargate tasks for batch jobs. Usage has been stable for 6 months. The company currently has EC2 Instance Savings Plans for their web tier. The finance team wants to further reduce costs on the Lambda and Fargate workloads without committing to specific instance types or sizes. What should the solutions architect recommend?",
+o:["Purchase EC2 Instance Savings Plans for the Lambda and Fargate workloads","Purchase Compute Savings Plans with a 1-year commitment, which apply to EC2, Lambda, and Fargate usage","Convert the Lambda functions to container-based Lambda to benefit from existing EC2 Savings Plans","Purchase Reserved Instances for the Fargate tasks and separate Reserved Concurrency for Lambda"],
+c:1,
+e:"<strong>Correct: Compute Savings Plans.</strong> Compute Savings Plans offer up to 66% savings over On-Demand pricing and apply flexibly across EC2 (any instance family, size, Region, OS), AWS Lambda, and AWS Fargate. They are the most flexible Savings Plan type. A 1-year commitment with hourly spend commitment provides immediate savings on Lambda invocation costs and Fargate compute. Compute Savings Plans automatically apply where they provide the greatest savings first. <strong>Why not A:</strong> EC2 Instance Savings Plans apply only to specific EC2 instance families in specific Regions — they do not cover Lambda or Fargate. <strong>Why not C:</strong> Lambda container images use the same Lambda pricing model regardless of packaging format — they do not benefit from EC2 Savings Plans. <strong>Why not D:</strong> Fargate does not have Reserved Instances — there is no RI purchase option for Fargate tasks. Lambda Reserved Concurrency reserves capacity but does not reduce cost (it's a scaling limit, not a pricing model)."},
+{id:332,domain:"Cost-Optimized Architectures",topic:"Databases",sub:"DynamoDB On-Demand vs Provisioned",
+q:"A company has a DynamoDB table used by a mobile gaming leaderboard. Traffic is extremely spiky: normal traffic is around 50 reads/writes per second, but the table experiences sudden bursts of 5,000+ reads/writes per second for 15–30 minutes when new game content releases, which happens approximately twice per month. The team currently uses Provisioned capacity mode with Auto Scaling. They frequently receive ProvisionedThroughputExceededException errors during content releases because Auto Scaling cannot react fast enough. What change would BEST solve the throttling issue while keeping costs reasonable?",
+o:["Increase the provisioned capacity to 5,000 RCU/WCU permanently to handle peak load","Switch the DynamoDB table to On-Demand capacity mode","Enable DynamoDB Accelerator (DAX) in front of the table to cache read requests","Add a second DynamoDB table and route traffic using application-level sharding"],
+c:1,
+e:"<strong>Correct: DynamoDB On-Demand capacity mode.</strong> On-Demand mode instantly scales to handle any request rate without throttling (up to the previous peak × 2, and beyond that with a brief ramp). Since bursts occur only ~twice/month for 30 minutes, On-Demand cost during peaks is modest. At normal traffic (50 ops/sec), On-Demand charges are minimal. The total monthly cost of On-Demand is likely far less than provisioning 5,000 RCU/WCU continuously. On-Demand eliminates the need for capacity planning and resolves the Auto Scaling lag problem. <strong>Why not A:</strong> Permanently provisioning 5,000 RCU/WCU for normal traffic of 50 ops/sec wastes ~99% of provisioned capacity — extremely expensive and unnecessary. <strong>Why not C:</strong> DAX caches read results, reducing read RCU consumption — but write throttling is not addressed by DAX. If the burst includes writes, DAX doesn't help. Also, DAX adds latency on misses and cache management complexity. <strong>Why not D:</strong> Sharding across tables increases complexity significantly without addressing the fundamental issue that Auto Scaling reacts too slowly to sudden demand spikes."},
+{id:333,domain:"Secure Architectures",topic:"Network Security",sub:"AWS WAF Managed Rules",
+q:"A company runs a public-facing web application on Amazon CloudFront backed by an Application Load Balancer. The security team has identified a pattern of SQL injection and cross-site scripting (XSS) attacks originating from various IP addresses worldwide. They want to block these attacks at the edge with minimal configuration effort and without writing custom rules. What should the solutions architect implement?",
+o:["Create a Network ACL on the VPC subnet containing the ALB with rules that deny common attack patterns","Associate an AWS WAF Web ACL with the CloudFront distribution using AWS Managed Rule Groups for SQL injection and XSS","Configure AWS Shield Advanced on the CloudFront distribution to block application-layer attacks","Create AWS WAF custom regex pattern rules to match and block SQL injection and XSS payloads"],
+c:1,
+e:"<strong>Correct: AWS WAF with AWS Managed Rule Groups.</strong> AWS WAF can be associated directly with Amazon CloudFront to inspect and filter requests at the edge before they reach the origin. AWS Managed Rule Groups — specifically the Core Rule Set (CRS), which includes SQL injection and XSS protections — are maintained by AWS and updated automatically as new attack patterns emerge. This provides immediate protection with minimal configuration: no custom rule writing required. <strong>Why not A:</strong> Network ACLs operate at the IP/port level (Layer 3/4) and cannot inspect HTTP payload content (Layer 7) — they cannot detect SQL injection or XSS patterns embedded in request bodies or query strings. <strong>Why not C:</strong> AWS Shield Advanced protects against DDoS (volumetric and protocol attacks). It provides some application-layer DDoS protection with WAF integration, but it does not block SQL injection or XSS by itself — it is not the right tool for this specific threat. <strong>Why not D:</strong> Custom regex rules require significant security expertise, time to develop, and ongoing maintenance as attack patterns evolve. AWS Managed Rule Groups achieve the same protection with zero development effort."},
+{id:334,domain:"Secure Architectures",topic:"Secrets Management",sub:"Secrets Manager Automatic Rotation",
+q:"A company stores database credentials for their Amazon RDS for MySQL instance in a configuration file on their application servers. The security team requires that database passwords be rotated every 60 days and that credentials never be stored in plaintext on servers. A solutions architect must redesign credential management to meet these requirements. What is the RECOMMENDED AWS solution?",
+o:["Store the credentials in an Amazon S3 bucket with SSE-S3 encryption and update them manually every 60 days","Store the credentials in AWS Secrets Manager and enable automatic rotation with a Lambda rotation function for Amazon RDS","Store the credentials in AWS Systems Manager Parameter Store as SecureString parameters and rotate them using a scheduled EventBridge rule triggering a Lambda function","Store the credentials in an encrypted Amazon EBS volume mounted to each application server"],
+c:1,
+e:"<strong>Correct: AWS Secrets Manager with automatic rotation.</strong> Secrets Manager is specifically designed for this use case. It stores credentials encrypted at rest using AWS KMS, provides an API for applications to retrieve credentials at runtime (no plaintext on disk), and supports native automatic rotation for Amazon RDS databases using a built-in Lambda rotation function. The rotation function automatically generates a new password, updates it in both Secrets Manager and the RDS instance, and keeps the application functioning during rotation via the AWSPENDING/AWSCURRENT staging mechanism. <strong>Why not A:</strong> S3 with SSE-S3 encrypts at rest but requires manual rotation and doesn't provide a secrets API for applications — credentials would still need to be extracted to servers. <strong>Why not C:</strong> SSM Parameter Store SecureString with EventBridge + Lambda can achieve rotation but requires building and maintaining the rotation Lambda from scratch, and SSM lacks native RDS rotation integration — more operational overhead than Secrets Manager. <strong>Why not D:</strong> Encrypted EBS volumes still store credentials as plaintext files on the volume; anyone with OS access can read them. This does not meet the no-plaintext requirement."},
+{id:335,domain:"Secure Architectures",topic:"Logging & Monitoring",sub:"VPC Flow Logs Analysis",
+q:"A company's security team suspects that an Amazon EC2 instance in their VPC has been compromised and is communicating with external command-and-control (C2) servers. The team needs to quickly identify which IP addresses the instance has been communicating with, on which ports, and whether traffic was accepted or rejected by security group rules. What combination of AWS services provides this information MOST quickly?",
+o:["Check Amazon CloudWatch metrics for the EC2 instance NetworkIn and NetworkOut to see traffic volume by destination","Enable VPC Flow Logs on the VPC, send logs to Amazon CloudWatch Logs, and use CloudWatch Logs Insights to query for traffic to and from the suspect instance's private IP","Use AWS CloudTrail to review API calls made from the EC2 instance role in the last 24 hours","Enable Amazon GuardDuty and wait for it to analyze historical traffic and generate findings"],
+c:1,
+e:"<strong>Correct: VPC Flow Logs + CloudWatch Logs Insights.</strong> VPC Flow Logs capture metadata for every network flow through the VPC — including source IP, destination IP, source port, destination port, protocol, bytes, packets, and ACCEPT/REJECT status. When sent to CloudWatch Logs, they can be queried immediately using CloudWatch Logs Insights with filtering by the instance's ENI or private IP. A query like `filter srcAddr = '10.0.1.50' or dstAddr = '10.0.1.50'` returns all connections within seconds. <strong>Why not A:</strong> CloudWatch EC2 network metrics show aggregate bytes in/out but do not show per-destination IP or port — no forensic detail. <strong>Why not C:</strong> CloudTrail logs AWS API calls (e.g., DescribeInstances) made with credentials — it does not log network-layer traffic between the instance and external IPs. <strong>Why not D:</strong> GuardDuty is an excellent detection tool and may already have findings, but enabling it now and waiting does not help with immediate forensic investigation of an already-suspected compromise. Additionally, GuardDuty requires 7–14 days of baseline data for some anomaly detections."},
+{id:336,domain:"Secure Architectures",topic:"Compliance",sub:"AWS Config Conformance Packs",
+q:"A company must demonstrate compliance with the CIS AWS Foundations Benchmark across 20 AWS accounts in their organization. The compliance team needs continuous, automated evaluation of AWS resource configurations against the benchmark's controls and a centralized dashboard showing the compliance status of each account. They want to minimize the setup effort. What should the solutions architect implement?",
+o:["Write custom AWS Lambda functions triggered by Amazon EventBridge rules to evaluate resource configurations every hour","Deploy AWS Config with the CIS AWS Foundations Benchmark conformance pack across all organization accounts using AWS Organizations delegated administrator, and view results in AWS Security Hub","Enable Amazon Inspector on all accounts to scan for compliance violations against the CIS benchmark","Configure AWS Trusted Advisor in all accounts and aggregate results using AWS Organizations"],
+c:1,
+e:"<strong>Correct: AWS Config Conformance Packs + Security Hub via Organizations.</strong> AWS Config Conformance Packs are prebuilt collections of Config Rules mapped to compliance frameworks. AWS provides a CIS AWS Foundations Benchmark conformance pack template. Using AWS Organizations + Config's delegated administrator, the conformance pack can be deployed organization-wide in a single operation. AWS Security Hub aggregates compliance findings from Config across all accounts into a centralized dashboard with an overall security score — no per-account setup needed for member accounts. <strong>Why not A:</strong> Custom Lambda functions require significant development effort and ongoing maintenance. AWS Config Conformance Packs achieve the same with prebuilt, AWS-maintained rule sets. <strong>Why not C:</strong> Amazon Inspector evaluates EC2 instances and container images for software vulnerabilities and network reachability — not AWS resource configuration compliance against CIS benchmark controls (which cover IAM, logging, networking config). <strong>Why not D:</strong> Trusted Advisor provides some best-practice checks but does not map to CIS benchmark controls specifically and does not provide the detailed, per-resource compliance reporting of AWS Config."},
+{id:337,domain:"Secure Architectures",topic:"IAM",sub:"STS Session Policies",
+q:"A company uses a single IAM role with broad S3 permissions to allow a Lambda function to access any S3 bucket in the account. A new requirement dictates that when the Lambda function processes files for Customer A, it should only access Customer A's bucket, and when processing Customer B's files, it should only access Customer B's bucket — even though the Lambda uses the same IAM role. The solution must not require creating separate IAM roles for each customer. What should the solutions architect implement?",
+o:["Add bucket-level conditions to the IAM role's trust policy that change based on the customer being processed","When the Lambda function assumes its execution role, pass a session policy via the AssumeRole API call that restricts access to only the current customer's bucket","Create S3 bucket policies on each customer bucket that only allow access from the specific Lambda function ARN when a customer-specific tag is present","Use IAM permission boundaries on the Lambda execution role to restrict access per customer"],
+c:1,
+e:"<strong>Correct: STS Session Policies.</strong> When calling sts:AssumeRole (or using the Lambda's role), you can pass a session policy as an inline JSON document that further restricts the permissions granted by the role. The effective permissions are the intersection of the role's identity policy AND the session policy. The Lambda function can dynamically generate a session policy like `{Effect:Allow, Action:s3:*, Resource:arn:aws:s3:::customer-a-bucket/*}` before processing Customer A's files. This requires no new roles and dynamically scopes access. <strong>Why not A:</strong> IAM role trust policies control who can assume the role — they don't restrict what the role can do once assumed. Adding conditions to the trust policy doesn't limit per-customer bucket access. <strong>Why not C:</strong> S3 bucket policies restricting by Lambda ARN would restrict ALL of that Lambda's access to the bucket — not per-invocation. This doesn't dynamically scope within a single Lambda's execution. <strong>Why not D:</strong> Permission boundaries define the maximum permissions an identity can have — they are set at role creation time, not dynamically per-invocation. They cannot be changed per customer context at runtime."},
+{id:338,domain:"Secure Architectures",topic:"IAM",sub:"Resource-Based Policies",
+q:"A company has an Amazon S3 bucket that must be accessible to Lambda functions in three different AWS accounts. The security team requires that no IAM changes be made to the individual accounts — the access must be controlled entirely from the S3 bucket's side. What is the correct approach?",
+o:["Create a VPC endpoint for S3 in each account and configure the endpoint policy to allow cross-account access","Add a bucket policy to the S3 bucket that specifies the Lambda execution role ARNs from all three accounts in the Principal element with appropriate Action and Effect","Create an IAM role in the bucket's account with a trust policy for all three accounts and share the role ARN with each account's Lambda functions","Enable S3 Cross-Region Replication to copy the bucket contents to each of the three accounts"],
+c:1,
+e:"<strong>Correct: S3 Bucket Policy with cross-account Principals.</strong> S3 bucket policies are resource-based policies attached directly to the bucket. They can specify principals from any AWS account using ARNs like `arn:aws:iam::ACCOUNT-ID:role/lambda-role-name`. With this approach, access is controlled entirely from the bucket owner's side — no IAM changes are needed in the other accounts. The Lambda execution roles in those accounts need only standard S3 permissions in their own identity policy (which they likely already have), and the bucket policy grants the cross-account access. <strong>Why not A:</strong> VPC endpoints for S3 control routing within a VPC; endpoint policies don't grant cross-account access to the bucket — bucket policies still govern authorization. <strong>Why not C:</strong> A cross-account IAM role requires the external Lambda functions to call sts:AssumeRole and use temporary credentials — this DOES require IAM awareness in the external accounts (configuring Lambda to assume the role), violating the no-IAM-changes requirement. <strong>Why not D:</strong> S3 Cross-Region Replication copies data to new buckets — it is a data replication feature, not an access control mechanism."},
+{id:339,domain:"Secure Architectures",topic:"Security Services",sub:"Amazon Inspector",
+q:"A company runs a large fleet of Amazon EC2 instances and has recently adopted Amazon ECR to store container images for their Amazon ECS workloads. The security team wants continuous automated scanning for OS-level software vulnerabilities and known CVEs in both running EC2 instances and all container images stored in ECR, with findings centralized and prioritized by severity. What should the solutions architect enable?",
+o:["Enable Amazon GuardDuty with EC2 runtime monitoring and ECR image scanning","Enable Amazon Inspector v2 for the AWS account, which automatically scans EC2 instances and ECR container images and centralizes findings with severity scoring","Configure AWS Security Hub with the AWS Foundational Security Best Practices standard, which includes vulnerability scanning","Enable ECR basic scanning on all repositories and install Amazon CloudWatch agent on EC2 instances for OS metric collection"],
+c:1,
+e:"<strong>Correct: Amazon Inspector v2.</strong> Amazon Inspector v2 (the modern version) provides continuous, automated vulnerability scanning for: (1) Amazon EC2 instances — scans OS packages and network reachability; (2) Amazon ECR container images — scans on push and continuously re-evaluates as new CVEs are published; (3) AWS Lambda functions — scans function code and layer packages. Inspector uses the AWS Systems Manager agent on EC2 (no separate agent needed if SSM is already deployed). All findings include a risk score combining CVSS severity with environmental context, and findings are aggregated in Inspector's console with direct integration into Security Hub. <strong>Why not A:</strong> GuardDuty detects active threats and suspicious behavior (threat intelligence, anomaly detection) but does not scan for software vulnerabilities/CVEs. <strong>Why not C:</strong> Security Hub aggregates findings from other services but does not itself perform vulnerability scanning — it needs Inspector as a source. <strong>Why not D:</strong> ECR basic scanning uses Clair for on-push scanning only (not continuous re-evaluation); it doesn't cover EC2 instances at all. CloudWatch agent collects metrics, not vulnerability data."},
+{id:340,domain:"Secure Architectures",topic:"Systems Manager",sub:"Patch Manager Compliance",
+q:"A company manages 300 Amazon EC2 instances running a mix of Amazon Linux 2 and Windows Server 2019. The security team requires that all instances receive OS security patches within 7 days of patch release and that a compliance report showing the patch status of every instance be available on demand. The operations team wants to minimize manual patching effort. What should the solutions architect implement?",
+o:["Create an AWS Lambda function that uses the SSM API to run patch commands on all instances on a scheduled basis","Configure AWS Systems Manager Patch Manager with patch baselines for Amazon Linux 2 and Windows Server 2019, create a maintenance window to run AWS-RunPatchBaseline every 7 days, and use the SSM Patch Compliance dashboard","Use AWS Config rules to evaluate whether instances have the required patch level and trigger remediation via Systems Manager Automation","Deploy a third-party patch management tool on a bastion host that connects to all EC2 instances via SSH/RDP"],
+c:1,
+e:"<strong>Correct: AWS Systems Manager Patch Manager.</strong> Patch Manager provides end-to-end patch management: (1) Patch baselines define which patches are required (by severity, classification, and approval timing); (2) Maintenance windows schedule the AWS-RunPatchBaseline document to scan and install patches — configurable per OS type; (3) Patch Compliance in the SSM console and AWS Config shows compliance status for every managed instance, including which patches are missing. This requires SSM Agent (pre-installed on AWS AMIs) and an instance profile with SSM permissions — no additional software deployment. <strong>Why not A:</strong> A custom Lambda function can trigger SSM Run Command but requires development, scheduling, error handling, and compliance reporting — all built into Patch Manager natively. <strong>Why not C:</strong> AWS Config can detect patch non-compliance but triggers remediation asynchronously after violations occur. Config + Automation is a valid architecture but more complex to set up than Patch Manager's native maintenance window + baseline workflow. <strong>Why not D:</strong> Third-party patch tools require bastion host management, SSH/RDP connectivity to all instances, and agent installation — significant operational overhead compared to the native SSM approach."},
+{id:341,domain:"Secure Architectures",topic:"Encryption",sub:"KMS Multi-Region Keys",
+q:"A company runs a multi-Region active-active application with workloads in us-east-1 and eu-west-1. The application encrypts sensitive customer data using AWS KMS before storing it in Amazon DynamoDB Global Tables. Currently, each Region has a separate KMS key, so data encrypted in us-east-1 cannot be decrypted in eu-west-1 without a cross-Region KMS API call — adding latency and cross-Region costs. The team wants to encrypt data in one Region and decrypt it in another without cross-Region API calls. What should the solutions architect implement?",
+o:["Export the KMS key material from us-east-1 and manually import it into a KMS key in eu-west-1","Create a KMS Multi-Region key in us-east-1 and replicate it to eu-west-1; both Regions share the same key material and key ID format but operate independently","Use a customer-managed key (CMK) with imported key material and set the same key material in both Regions manually","Use AWS CloudHSM in both Regions and synchronize the HSM key material between clusters"],
+c:1,
+e:"<strong>Correct: KMS Multi-Region Keys.</strong> AWS KMS Multi-Region Keys are sets of KMS keys in different AWS Regions that have the same key material and key ID. Data encrypted with the primary key in us-east-1 can be decrypted by the replica key in eu-west-1 without any cross-Region API calls. Each Regional key operates independently (no cross-Region dependency at decrypt time), providing low-latency decryption in each Region. This is the purpose-built solution for multi-Region encryption scenarios. <strong>Why not A:</strong> Manually exporting and importing KMS key material is a complex, risky operation. Also, once a key has been created without Multi-Region status, it cannot be converted — a new key would be required. More importantly, this approach is manual and error-prone. <strong>Why not C:</strong> Importing the same key material into two separate CMKs creates two independent keys — they may share material but are not the same key. This technically works for encryption/decryption but is not the managed, auditable approach that Multi-Region Keys provide, and each key must be managed separately. <strong>Why not D:</strong> AWS CloudHSM provides dedicated HSM appliances but requires significantly more operational complexity (HSM cluster management, key synchronization) compared to KMS Multi-Region Keys."},
+{id:342,domain:"Secure Architectures",topic:"Logging & Monitoring",sub:"CloudTrail Insights",
+q:"A company's security team has enabled AWS CloudTrail across all accounts in their AWS Organization. They are concerned about detecting unusual API activity patterns — specifically, spikes in API call error rates or unusual volumes of specific management API calls that could indicate a compromised IAM credential or misconfigured automation. They want automated detection of these anomalies without writing custom detection logic. What should the solutions architect enable?",
+o:["Create Amazon CloudWatch metric filters on the CloudTrail log group to alert when error count exceeds a threshold","Enable CloudTrail Insights on the trail to automatically detect unusual write management API activity and API error rate anomalies","Use Amazon GuardDuty to monitor CloudTrail events for threat patterns based on known indicators of compromise","Configure AWS Security Hub to aggregate CloudTrail logs and use machine learning to detect anomalies"],
+c:1,
+e:"<strong>Correct: CloudTrail Insights.</strong> CloudTrail Insights automatically analyzes your management (control-plane) API activity and detects two types of anomalies: (1) unusual API call rates — when write management APIs are called at a rate significantly outside the baseline (e.g., normally 5 iam:CreateUser calls/hour, suddenly 500); (2) unusual API error rates — when API error rates spike significantly above baseline. Insights uses machine learning trained on your account's historical activity. When an anomaly is detected, it creates an Insights event visible in CloudTrail and can trigger EventBridge for automated response — no custom threshold configuration required. <strong>Why not A:</strong> CloudWatch metric filters can detect absolute threshold breaches but require you to define the threshold manually. They cannot adapt to your account's unique baseline or detect relative anomalies (e.g., 10x normal volume). <strong>Why not C:</strong> GuardDuty does analyze CloudTrail events for threat intelligence matches and behavioral anomalies. However, CloudTrail Insights specifically targets API call rate anomalies — GuardDuty and Insights are complementary, and Insights is more directly purpose-built for API rate/error anomaly detection. <strong>Why not D:</strong> Security Hub aggregates findings from other services but does not natively analyze raw CloudTrail logs with ML — it relies on Inspector, GuardDuty, Config, etc. as sources."},
+{id:343,domain:"Resilient Architectures",topic:"Storage",sub:"S3 Cross-Region Replication",
+q:"A company stores critical business data in Amazon S3 in us-east-1. The company's disaster recovery plan requires that all S3 objects be available in us-west-2 within 15 minutes of creation to meet an RPO of 15 minutes. The company also needs confirmation that replication is keeping up with the data creation rate. What should the solutions architect configure?",
+o:["Enable S3 versioning on the source bucket and set up a scheduled AWS DataSync task to copy new objects to a us-west-2 bucket every 15 minutes","Enable S3 Cross-Region Replication (CRR) with S3 Replication Time Control (RTC) enabled, which guarantees 99.99% of objects are replicated within 15 minutes, and enable replication metrics in Amazon CloudWatch","Enable S3 Cross-Region Replication without Replication Time Control and monitor replication lag using S3 Storage Lens","Configure S3 Intelligent-Tiering in us-west-2 and sync objects using an EventBridge rule that triggers a Lambda copy function on each S3 ObjectCreated event"],
+c:1,
+e:"<strong>Correct: S3 CRR with Replication Time Control (RTC).</strong> S3 RTC is an add-on to Cross-Region Replication that provides an SLA: 99.99% of objects are replicated within 15 minutes. Without RTC, replication is best-effort with no time guarantee. RTC also enables replication metrics published to CloudWatch — including PendingReplicationCount and ReplicationLatency — allowing monitoring of replication lag in real time. This directly satisfies both the 15-minute RPO and the monitoring requirement. <strong>Why not A:</strong> DataSync scheduled every 15 minutes would not meet the RPO — a DataSync task scheduled at T=0 could miss objects created at T=1 until T=15, and the task itself takes time to run. Also, DataSync requires managing scheduling, error handling, and is not event-driven per object. <strong>Why not C:</strong> S3 CRR without RTC has no replication time guarantee. Replication could take minutes to hours depending on object size and system load — this does not meet the 15-minute RPO SLA requirement. <strong>Why not D:</strong> EventBridge + Lambda for per-object copying adds operational complexity and has rate limiting concerns at high object creation rates. It also doesn't provide the SLA guarantee of S3 RTC."},
+{id:344,domain:"Resilient Architectures",topic:"Networking",sub:"Route 53 Weighted Routing for Migration",
+q:"A company wants to migrate their web application from an on-premises data center to AWS without causing downtime. The plan is to gradually shift traffic from the on-premises servers to AWS EC2 instances over several weeks, starting with 10% of traffic to AWS and increasing as the team gains confidence. The application uses a single DNS name (app.example.com) for user access. What Route 53 configuration should the solutions architect use?",
+o:["Create two Route 53 records for app.example.com: one ALIAS record pointing to the on-premises IP and one ALIAS record pointing to the AWS ALB, and use Route 53 health checks to route all traffic to the healthy endpoint","Create weighted routing policy records in Route 53 for app.example.com — one record pointing to the on-premises IP with weight 90 and one record pointing to the AWS ALB with weight 10, then gradually adjust the weights","Use Route 53 latency-based routing with two records: one for the on-premises data center and one for the AWS ALB, allowing Route 53 to automatically route users to the lowest-latency endpoint","Create a CNAME chain where app.example.com points to an intermediate CNAME that points to the on-premises servers, then update the intermediate CNAME to point to AWS during the migration"],
+c:1,
+e:"<strong>Correct: Route 53 Weighted Routing.</strong> Weighted routing allows you to assign a numeric weight to each DNS record. Traffic is distributed proportionally: weight 90 (on-premises) and weight 10 (AWS) means ~10% of DNS responses resolve to the AWS ALB. The weights can be adjusted at any time without DNS changes visible to users — just update the weight in Route 53. This enables a gradual, controlled migration with easy rollback (set AWS weight to 0 to instantly stop sending traffic). <strong>Why not A:</strong> Route 53 health check-based failover routing fails over ALL traffic when the primary is unhealthy — it is a binary switch, not a gradual traffic split. It doesn't allow a 90/10 percentage split. <strong>Why not C:</strong> Latency-based routing routes users to the endpoint with the lowest network latency — it is for performance optimization, not controlled traffic splitting. The on-premises data center may have lower latency for nearby users, but the routing is not controllable by percentage. <strong>Why not D:</strong> CNAME chains add unnecessary complexity and DNS TTL delays; updating the intermediate CNAME would shift 100% of traffic at once — not a gradual migration."},
+{id:345,domain:"Resilient Architectures",topic:"Databases",sub:"RDS Backup and Restore Strategy",
+q:"A company runs a business-critical application on Amazon RDS for PostgreSQL with a 4-hour RPO and a 1-hour RTO in case of accidental data deletion or corruption. The database is 500 GB. The company needs to be confident they can meet these targets. What backup and restore configuration should the solutions architect implement?",
+o:["Enable RDS Multi-AZ deployment; in case of data corruption, fail over to the standby replica","Enable automated backups with a 7-day retention period and test restoring the database to a point-in-time within the backup window to validate the RTO","Enable automated backups with a 1-day retention period and rely on the most recent daily snapshot for recovery","Use AWS Database Migration Service (DMS) to continuously replicate the database to a second RDS instance in the same Region as a hot standby"],
+c:1,
+e:"<strong>Correct: Automated backups with 7-day retention + tested point-in-time restore.</strong> RDS automated backups enable point-in-time recovery (PITR) to any second within the backup retention period. With a 4-hour RPO, PITR allows restoration to within the last 4 hours. The 7-day retention window comfortably covers the RPO. Critically, the restore creates a new RDS instance — for 500 GB, restore time must be tested to confirm it meets the 1-hour RTO. Regular restore testing is a best practice (RTO is a promise, not a guarantee). <strong>Why not A:</strong> Multi-AZ standby is a replica that is always current — it does not provide point-in-time recovery. If data is accidentally deleted or corrupted, the corruption is immediately replicated to the standby, making it equally corrupted. Multi-AZ solves hardware failure, not logical data corruption. <strong>Why not C:</strong> A 1-day retention period only allows restoration to the previous day. If corruption occurs near the end of the day, the RPO could be nearly 24 hours — far exceeding the 4-hour RPO requirement. <strong>Why not D:</strong> DMS continuous replication creates a near-real-time replica — like Multi-AZ, it replicates corruption or accidental deletion immediately to the target, providing no protection against logical data errors."}
 ];
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2364,691 +2489,4 @@ let pending = null; // selected option index awaiting submit
 // HELPERS
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function shuffle(a) {
-  const b = [...a];
-  for (let i=b.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]; }
-  return b;
-}
-function pct(c,t) { return t ? Math.round(c/t*100) : null; }
-function colorFor(p) {
-  if (p===null) return 'var(--border)';
-  if (p>=80) return 'var(--green)';
-  if (p>=60) return 'var(--accent)';
-  return 'var(--red)';
-}
-function labelFor(p) {
-  if (p===null) return 'Not started';
-  if (p>=80) return 'Strong 💪';
-  if (p>=60) return 'Developing 📈';
-  return 'Needs Work ⚠️';
-}
-function goTo(id) {
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  if (id==='home') renderHome();
-  if (id==='dash') renderDash();
-  document.getElementById(id).classList.add('active');
-  window.scrollTo(0,0);
-}
-function goFlashcards() {
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById('flashcards').classList.add('active');
-  initFlashcards();
-  window.scrollTo(0,0);
-}
-function touchStreak() {
-  const today = new Date().toDateString();
-  if (S.lastDay !== today) {
-    const yest = new Date(Date.now()-86400000).toDateString();
-    S.streak = (S.lastDay===yest) ? S.streak+1 : 1;
-    S.lastDay = today;
-  }
-}
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// HOME
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function renderHome() {
-  const p = pct(S.correct, S.answered);
-  const total = 295;
-  const pctDone = Math.round(((S.answered||0)/total)*100);
-
-  // Hero banner
-  document.getElementById('home-hero-wrap').innerHTML = `
-    <div class="home-hero">
-      <div class="hero-eyebrow">AWS Solution Architect Associate</div>
-      <div class="hero-title">SAA-C03 Exam Prep</div>
-      <div class="hero-sub">320 questions across all 4 exam domains</div>
-      <div class="hero-progress-label">
-        <span>Questions answered</span>
-        <span>${S.answered||0} / ${total}</span>
-      </div>
-      <div class="hero-prog-bg"><div class="hero-prog" style="width:${pctDone}%"></div></div>
-    </div>`;
-
-  // Stats
-  const scoreColor = p!==null ? colorFor(p) : 'var(--accent)';
-  document.getElementById('home-stats').innerHTML = `
-    <div class="stat">
-      <span class="stat-icon">✅</span>
-      <div class="stat-n">${S.answered||0}</div>
-      <div class="stat-l">Answered</div>
-    </div>
-    <div class="stat">
-      <span class="stat-icon">🎯</span>
-      <div class="stat-n" style="color:${scoreColor}">${p!==null?p+'%':'—'}</div>
-      <div class="stat-l">Score</div>
-    </div>
-    <div class="stat">
-      <span class="stat-icon">🔥</span>
-      <div class="stat-n">${S.streak||0}</div>
-      <div class="stat-l">Day Streak</div>
-    </div>
-    <div class="stat">
-      <span class="stat-icon">📋</span>
-      <div class="stat-n">${S.quizzes||0}</div>
-      <div class="stat-l">Quizzes</div>
-    </div>`;
-
-  // Show Weak Areas button if any topic is below 60%
-  const hasWeak = TOPICS.some(t => { const ts=S.topicStats?.[t]; return ts&&ts.t>0&&pct(ts.c,ts.t)<60; });
-  document.getElementById('weak-btn').style.display = hasWeak ? 'flex' : 'none';
-  // Show Bookmarks button
-  const bkCount = (S.bookmarks||[]).length;
-  document.getElementById('bk-btn').style.display = bkCount > 0 ? 'flex' : 'none';
-  document.getElementById('bk-count').textContent = bkCount;
-}
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// DASHBOARD
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function renderDash() {
-  let h = '';
-  const op = pct(S.correct, S.answered);
-  const col = colorFor(op);
-
-  // Overall score ring (SVG)
-  const r = 52, cx = 68, cy = 68, stroke = 9;
-  const circ = 2 * Math.PI * r;
-  const filled = op !== null ? (op / 100) * circ : 0;
-  h += `<div class="card" style="text-align:center">
-    <div class="card-title" style="justify-content:center">Overall Proficiency</div>
-    <div class="score-ring-wrap">
-      <svg class="score-ring-svg" width="136" height="136" viewBox="0 0 136 136">
-        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--surface2)" stroke-width="${stroke}"/>
-        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="${stroke}"
-          stroke-dasharray="${filled} ${circ}" stroke-dashoffset="${circ/4}"
-          stroke-linecap="round" style="transition:stroke-dasharray .8s cubic-bezier(.4,0,.2,1)"/>
-        <text x="${cx}" y="${cy-8}" text-anchor="middle" fill="${col}" font-size="26" font-weight="800" font-family="-apple-system,sans-serif">${op!==null?op+'%':'—'}</text>
-        <text x="${cx}" y="${cy+14}" text-anchor="middle" fill="var(--muted)" font-size="11" font-family="-apple-system,sans-serif">${labelFor(op)}</text>
-      </svg>
-      <div class="score-ring-label">${S.answered||0} questions answered</div>
-    </div>
-  </div>`;
-
-  // By Domain
-  h += `<div class="card"><div class="card-title">📡 By Exam Domain</div>`;
-  DOMAINS.forEach(d => {
-    const ds = S.domainStats?.[d]||{c:0,t:0};
-    const p = pct(ds.c,ds.t);
-    const dc = colorFor(p);
-    const gradMap = {null:'var(--surface2)'};
-    const grad = p===null ? 'var(--surface2)' : p>=80 ? 'linear-gradient(90deg,#22c55e,#14b8a6)' : p>=60 ? 'linear-gradient(90deg,#3b82f6,#6366f1)' : p>=40 ? 'linear-gradient(90deg,#f59e0b,#f97316)' : 'linear-gradient(90deg,#ef4444,#f97316)';
-    h += `<div class="bar-row">
-      <div class="bar-label">
-        <span class="bar-name" style="font-weight:600">${d.replace('Design ','')}</span>
-        <span class="bar-meta">${ds.t} answered · <strong style="color:${dc}">${p!==null?p+'%':'—'}</strong></span>
-      </div>
-      <div class="bar-bg"><div class="bar-fill" style="width:${p||0}%;background:${grad}"></div></div>
-    </div>`;
-  });
-  h += '</div>';
-
-  // By Topic
-  h += `<div class="card"><div class="card-title">🏷️ By Topic</div>`;
-  TOPICS.forEach(t => {
-    const ts = S.topicStats?.[t]||{c:0,t:0};
-    const p = pct(ts.c,ts.t);
-    const tc = colorFor(p);
-    const tgrad = p===null ? 'var(--surface2)' : p>=80 ? 'linear-gradient(90deg,#22c55e,#14b8a6)' : p>=60 ? 'linear-gradient(90deg,#3b82f6,#6366f1)' : p>=40 ? 'linear-gradient(90deg,#f59e0b,#f97316)' : 'linear-gradient(90deg,#ef4444,#f97316)';
-    h += `<div class="bar-row">
-      <div class="bar-label">
-        <span class="bar-name">${t}</span>
-        <span class="badge" style="background:${tc}22;color:${tc}">${labelFor(p).replace(/ .*/,'')}</span>
-      </div>
-      <div class="bar-bg"><div class="bar-fill" style="width:${p||0}%;background:${tgrad}"></div></div>
-      <div style="font-size:10px;color:var(--muted);margin-top:4px">${ts.t} answered · ${p!==null?p+'%':'—'}</div>
-    </div>`;
-  });
-  h += '</div>';
-
-  // Weak areas callout
-  const weak = TOPICS.filter(t => { const ts=S.topicStats?.[t]; return ts&&ts.t>0&&pct(ts.c,ts.t)<60; });
-  if (weak.length) {
-    h += `<div class="card weak-card">
-      <div class="card-title" style="color:var(--red)">⚠️ Priority Focus Areas</div>`;
-    weak.forEach(t => {
-      const ts=S.topicStats[t];
-      h += `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(239,68,68,.15)">
-        <span style="font-size:13px">${t}</span>
-        <span style="color:var(--red);font-weight:800;font-size:14px">${pct(ts.c,ts.t)}%</span>
-      </div>`;
-    });
-    h += '</div>';
-  }
-
-  h += `<div style="text-align:center;padding:12px 0 4px;font-size:11px;color:var(--muted)">
-    320 questions · 4 SAA-C03 domains
-  </div>`;
-
-  document.getElementById('dash-body').innerHTML = h;
-}
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// QUIZ ENGINE
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-let timerInterval = null;
-let timerSecs = 0;
-
-function startTimer(seconds) {
-  clearInterval(timerInterval);
-  timerSecs = seconds;
-  const el = document.getElementById('exam-timer');
-  el.classList.add('show');
-  el.classList.remove('warn');
-  function tick() {
-    if (timerSecs <= 0) { clearInterval(timerInterval); showResults(); return; }
-    timerSecs--;
-    const h = Math.floor(timerSecs/3600);
-    const m = Math.floor((timerSecs%3600)/60);
-    const s = timerSecs%60;
-    el.textContent = `⏱ ${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-    if (timerSecs <= 600) el.classList.add('warn'); // red under 10 min
-  }
-  tick();
-  timerInterval = setInterval(tick, 1000);
-}
-
-function stopTimer() {
-  clearInterval(timerInterval);
-  timerInterval = null;
-  const el = document.getElementById('exam-timer');
-  if (el) { el.classList.remove('show','warn'); }
-}
-
-function startQuiz(type) {
-  stopTimer();
-  const count = type==='full' ? 65 : 10;
-  let pool = shuffle(Q);
-
-  if (type==='extra') {
-    const seen = new Set(S.seenIds||[]);
-    const unseen = pool.filter(q=>!seen.has(q.id));
-    pool = unseen.length>=5 ? unseen : pool;
-  } else if (type==='weak') {
-    const weakTopics = new Set(TOPICS.filter(t => {
-      const ts=S.topicStats?.[t]; return ts&&ts.t>0&&pct(ts.c,ts.t)<60;
-    }));
-    const weakQs = shuffle(Q.filter(q=>weakTopics.has(q.topic)));
-    const otherQs = shuffle(Q.filter(q=>!weakTopics.has(q.topic)));
-    pool = [...weakQs, ...otherQs];
-  } else if (type==='bookmarks') {
-    const bkSet = new Set(S.bookmarks||[]);
-    pool = shuffle(Q.filter(q=>bkSet.has(q.id)));
-    if (pool.length===0) { alert('No bookmarked questions yet. Bookmark questions during a quiz using the 🔖 button.'); return; }
-  }
-
-  QZ = { qs: pool.slice(0, Math.min(count, pool.length)), idx:0, picks:{}, correct:0, type };
-  pending = null;
-  goTo('quiz');
-  if (type==='full') startTimer(130*60); // 130 minutes
-  renderQ();
-}
-
-function renderQ() {
-  const q = QZ.qs[QZ.idx];
-  const total = QZ.qs.length;
-  const i = QZ.idx;
-  const answered = QZ.picks[i];
-  const LTRS = ['A','B','C','D'];
-
-  // Header
-  document.getElementById('q-prog-txt').textContent = `Question ${i+1} of ${total}`;
-  document.getElementById('q-prog-bar').style.width = `${(i/total)*100}%`;
-  document.getElementById('live-score').textContent = `${QZ.correct} / ${i}`;
-
-  // Options
-  let optsH = q.o.map((opt,oi)=>{
-    let cls = 'opt';
-    if (answered!==undefined) {
-      if (oi===q.c) cls+=' correct';
-      else if (oi===answered) cls+=' wrong';
-    } else if (oi===pending) cls+=' sel';
-    return `<div class="${cls}" onclick="pickOpt(${oi})" id="op${oi}">
-      <span class="opt-ltr">${LTRS[oi]}</span>
-      <span class="opt-txt">${opt}</span>
-    </div>`;
-  }).join('');
-
-  // Explanation
-  let explH = '';
-  if (answered!==undefined) {
-    const icon = answered===q.c ? '✅' : '❌';
-    explH = `<div class="expl show">${icon} ${q.e}</div>`;
-  }
-
-  // Bottom button
-  let btnH = '';
-  if (answered===undefined) {
-    btnH = `<button class="btn btn-gold" id="sub-btn" onclick="submitQ()" ${pending===null?'disabled':''} style="margin-top:14px">Submit Answer</button>`;
-  } else if (i < total-1) {
-    btnH = `<button class="btn btn-gold" onclick="nextQ()" style="margin-top:14px">Next Question →</button>`;
-  } else {
-    btnH = `<button class="btn btn-green" onclick="showResults()" style="margin-top:14px">📊 View Results</button>`;
-  }
-
-  const isBk = (S.bookmarks||[]).includes(q.id);
-  document.getElementById('quiz-body').innerHTML = `
-    <div style="padding:0 16px;max-width:500px;margin:0 auto">
-      <div class="card">
-        <div class="q-meta">📁 ${q.domain} &nbsp;·&nbsp; ${q.topic} &nbsp;·&nbsp; ${q.sub}
-          <button class="bk-btn" onclick="toggleBookmark(${q.id})" title="Bookmark">${isBk?'🔖':'🏷️'}</button>
-        </div>
-        <div class="q-text">${q.q}</div>
-        ${optsH}
-        ${explH}
-        ${btnH}
-      </div>
-    </div>`;
-}
-
-function pickOpt(i) {
-  if (QZ.picks[QZ.idx]!==undefined) return; // already answered
-  pending = i;
-  renderQ();
-}
-
-function submitQ() {
-  if (pending===null) return;
-  const q = QZ.qs[QZ.idx];
-  const ok = pending===q.c;
-  QZ.picks[QZ.idx] = pending;
-  if (ok) QZ.correct++;
-
-  // Update persistent stats
-  S.answered++;
-  if (ok) S.correct++;
-  if (!S.topicStats[q.topic]) S.topicStats[q.topic]={c:0,t:0};
-  S.topicStats[q.topic].t++;
-  if (ok) S.topicStats[q.topic].c++;
-  if (!S.domainStats[q.domain]) S.domainStats[q.domain]={c:0,t:0};
-  S.domainStats[q.domain].t++;
-  if (ok) S.domainStats[q.domain].c++;
-  if (!S.seenIds) S.seenIds=[];
-  if (!S.seenIds.includes(q.id)) S.seenIds.push(q.id);
-  touchStreak();
-  saveState();
-
-  pending = null;
-  renderQ();
-}
-
-function nextQ() {
-  QZ.idx++;
-  pending = null;
-  renderQ();
-}
-
-function exitQuiz() {
-  if (QZ.idx>0 || QZ.picks[0]!==undefined) {
-    if (!confirm('Exit quiz? Your progress will be lost.')) return;
-  }
-  stopTimer();
-  goTo('home');
-}
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// RESULTS
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function showResults() {
-  stopTimer();
-  S.quizzes++;
-  // Save to history
-  if (!S.history) S.history=[];
-  S.history.push({ p: Math.round(QZ.correct/QZ.qs.length*100), c: QZ.correct, t: QZ.qs.length, type: QZ.type, ts: Date.now() });
-  if (S.history.length > 10) S.history = S.history.slice(-10);
-  saveState();
-
-  const cor = QZ.correct;
-  const tot = QZ.qs.length;
-  const p   = Math.round(cor/tot*100);
-  const pass = p>=72;
-  const LTRS = ['A','B','C','D'];
-
-  // Score history mini chart
-  let chartH = '';
-  if (S.history.length > 1) {
-    const bars = S.history.map(h => {
-      const col = h.p>=72 ? 'var(--green)' : h.p>=55 ? 'var(--accent)' : 'var(--red)';
-      const ht = Math.max(8, Math.round(h.p * 0.48));
-      const label = h.p+'%';
-      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center">
-        <div style="width:100%;background:${col};border-radius:4px 4px 0 0;height:${ht}px"></div>
-        <div style="font-size:9px;color:var(--muted);margin-top:2px">${label}</div>
-      </div>`;
-    }).join('');
-    chartH = `<div class="card" style="margin-bottom:14px">
-      <div style="font-size:12px;font-weight:700;margin-bottom:8px;color:var(--accent)">SCORE HISTORY</div>
-      <div style="display:flex;align-items:flex-end;gap:4px;height:56px">${bars}</div>
-      <div style="font-size:10px;color:var(--muted);margin-top:6px;text-align:center">Last ${S.history.length} quizzes · 72% = passing</div>
-    </div>`;
-  }
-
-  let h = `
-    <div class="score-ring" style="border-color:${pass?'var(--green)':'var(--red)'}">
-      <div class="score-big" style="color:${pass?'var(--green)':'var(--red)'}">${p}%</div>
-      <div class="score-sub">${cor} / ${tot}</div>
-    </div>
-    <div style="text-align:center;margin-bottom:16px">
-      <div style="font-size:18px;font-weight:700">${pass?'🎉 Passed!':'📚 Keep Going!'}</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:4px">AWS passing score: 72% &nbsp;·&nbsp; Need ${Math.ceil(tot*.72)} correct</div>
-    </div>
-    ${chartH}
-    <div class="card">
-      <div style="font-size:13px;font-weight:700;margin-bottom:12px">Question Review</div>`;
-
-  QZ.qs.forEach((q,i)=>{
-    const a = QZ.picks[i];
-    if (a===undefined) return;
-    const ok = a===q.c;
-    h += `<div class="rev-item" style="border-color:${ok?'var(--green)':'var(--red)'}">
-      <div class="rev-q"><strong>${i+1}.</strong> ${q.q.length>90?q.q.slice(0,90)+'…':q.q}</div>
-      <div class="rev-a">Your answer: ${LTRS[a]}. ${q.o[a].slice(0,55)}${q.o[a].length>55?'…':''}</div>
-      ${!ok?`<div class="rev-a" style="color:var(--green)">✓ Correct: ${LTRS[q.c]}. ${q.o[q.c].slice(0,55)}${q.o[q.c].length>55?'…':''}</div>`:''}
-    </div>`;
-  });
-  h += `</div>
-    <button class="btn btn-gold" onclick="goTo('home')">🏠 Back to Home</button>
-    <button class="btn btn-gray" onclick="startQuiz('mini')">📝 Take Another Quiz</button>`;
-
-  document.getElementById('results-body').innerHTML = h;
-  document.getElementById('results').classList.add('active');
-  document.querySelectorAll('.screen').forEach(s=>{ if(s.id!=='results') s.classList.remove('active'); });
-  window.scrollTo(0,0);
-}
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// BOOKMARKS
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function toggleBookmark(id) {
-  if (!S.bookmarks) S.bookmarks=[];
-  const idx = S.bookmarks.indexOf(id);
-  if (idx===-1) S.bookmarks.push(id);
-  else S.bookmarks.splice(idx,1);
-  saveState();
-  renderQ(); // re-render to update icon
-}
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// STUDY MODE
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function goStudy(topicFilter) {
-  const el = document.getElementById('study-body');
-  const titleEl = document.getElementById('study-title');
-  const LTRS = ['A','B','C','D'];
-
-  if (!topicFilter) {
-    // Show topic picker
-    titleEl.textContent = 'Study Mode';
-    let h = `<p style="font-size:13px;color:var(--muted);margin-bottom:16px">Choose a topic to study. All answers and explanations are shown immediately — no scoring.</p>`;
-    // Group by domain then topic
-    DOMAINS.forEach(d => {
-      const domTopics = [...new Set(Q.filter(q=>q.domain===d).map(q=>q.topic))];
-      h += `<div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.5px;margin-bottom:6px;margin-top:4px">${d.toUpperCase()}</div>`;
-      domTopics.forEach(t => {
-        const count = Q.filter(q=>q.topic===t).length;
-        const ts = S.topicStats?.[t]||{c:0,t:0};
-        const p = pct(ts.c,ts.t);
-        const col = colorFor(p);
-        h += `<button class="topic-btn" onclick="goStudy('${t.replace(/'/g,"\\'")}')">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="font-weight:600">${t}</span>
-            ${p!==null?`<span style="font-size:11px;padding:2px 7px;border-radius:999px;background:${col}22;color:${col}">${p}%</span>`:'<span style="font-size:11px;color:var(--muted)">New</span>'}
-          </div>
-          <div class="tb-meta">${count} question${count!==1?'s':''}</div>
-        </button>`;
-      });
-    });
-    el.innerHTML = h;
-  } else {
-    // Show all questions for this topic
-    titleEl.textContent = topicFilter;
-    const qs = Q.filter(q=>q.topic===topicFilter);
-    let h = `<button onclick="goStudy()" style="background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;padding:0 0 12px;display:block">← All Topics</button>`;
-    h += `<p style="font-size:12px;color:var(--muted);margin-bottom:14px">${qs.length} questions · ${topicFilter}</p>`;
-    qs.forEach((q,i) => {
-      let optsH = q.o.map((opt,oi)=>{
-        const cls = oi===q.c ? 'study-opt s-correct' : 'study-opt s-other';
-        return `<div class="${cls}"><span style="font-weight:700;min-width:16px;color:var(--muted)">${LTRS[oi]}</span>&nbsp;${opt}${oi===q.c?' <span style="color:var(--green);margin-left:6px">✓</span>':''}</div>`;
-      }).join('');
-      h += `<div class="study-q">
-        <div style="font-size:11px;color:var(--accent);font-weight:700;margin-bottom:8px">${q.sub}</div>
-        <div class="s-q">${i+1}. ${q.q}</div>
-        ${optsH}
-        <div class="study-expl">${q.e}</div>
-      </div>`;
-    });
-    el.innerHTML = h;
-  }
-
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById('study').classList.add('active');
-  window.scrollTo(0,0);
-}
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// FLASHCARDS DATA
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-const FC_CARDS = [
-// ── Amazon S3 ──
-{s:"Amazon S3",q:"What is the maximum size of a single S3 object?",a:"5 TB. Objects larger than 5 GB must use Multipart Upload. Single PUT is limited to 5 GB."},
-{s:"Amazon S3",q:"What are the S3 Standard-IA trade-offs?",a:"~58% cheaper storage than Standard, but has a per-GB retrieval fee. Minimum 30-day storage duration and 128 KB minimum object size charge."},
-{s:"Amazon S3",q:"What is S3 Intelligent-Tiering?",a:"Automatically moves objects between Frequent Access, Infrequent Access, and Archive Instant tiers based on access patterns. No retrieval fees. Small monthly monitoring charge per object."},
-{s:"Amazon S3",q:"S3 Glacier Instant Retrieval vs Flexible Retrieval?",a:"Instant Retrieval: millisecond access (like Standard-IA). Flexible Retrieval: 1–5 min expedited, 3–5 hrs standard, 5–12 hrs bulk. Use Instant for quarterly access, Flexible for rarely-accessed archives."},
-{s:"Amazon S3",q:"What is an S3 Gateway Endpoint?",a:"A VPC endpoint that routes S3 traffic privately, bypassing the internet and NAT Gateway. Free — just update route tables. Works for S3 and DynamoDB only."},
-{s:"Amazon S3",q:"What does S3 Versioning protect against?",a:"Accidental deletes and overwrites. Preserves all versions. Cannot be fully disabled once enabled (only suspended). Required for S3 Cross-Region Replication."},
-{s:"Amazon S3",q:"What is S3 Transfer Acceleration?",a:"Uses CloudFront edge locations to accelerate long-distance uploads to S3. Data travels to the nearest edge, then over AWS backbone. Useful for globally distributed users uploading to a single bucket."},
-{s:"Amazon S3",q:"Which S3 encryption option gives full key control with CloudTrail logging?",a:"SSE-KMS with a Customer Managed Key (CMK). SSE-S3 uses AWS-managed keys. SSE-C requires the key in every API request. SSE-KMS CMK provides key policies + CloudTrail logs every encrypt/decrypt call."},
-{s:"Amazon S3",q:"What is an S3 pre-signed URL?",a:"A URL that grants temporary access to a private S3 object, signed with the requester's credentials. Expires after a set time (default 1 hr, max 7 days with STS). Used to share private content without making the bucket public."},
-// ── Amazon EC2 ──
-{s:"Amazon EC2",q:"Spot vs On-Demand EC2: what is the key difference?",a:"Spot = up to 90% cheaper, can be interrupted with 2-min warning. On-Demand = full price, no interruption. Use Spot for fault-tolerant, stateless, or batch workloads that can handle interruption."},
-{s:"Amazon EC2",q:"When should you use Reserved Instances?",a:"Steady-state 24/7 workloads. Commit to 1 or 3 years for up to 72% savings. Standard RIs are cheapest. Convertible RIs allow changing instance family/size. Zonal RIs provide capacity reservation; Regional RIs do not."},
-{s:"Amazon EC2",q:"What is an EC2 Savings Plan?",a:"Commit to a $/hour spend for 1 or 3 years for up to 66% savings. More flexible than RIs — applies automatically across instance families. Compute Savings Plans also cover Lambda and Fargate."},
-{s:"Amazon EC2",q:"What are the three EC2 Placement Group types?",a:"Cluster = same rack, lowest latency and highest network throughput (HPC/ML). Spread = different racks, max 7 per AZ (critical instances). Partition = different partitions, for distributed systems (HDFS, Cassandra, Kafka)."},
-{s:"Amazon EC2",q:"EBS vs Instance Store: what is the difference?",a:"EBS = persistent, network-attached, survives stop/start. Instance Store = physically attached, highest I/O, data lost on stop/termination. Use Instance Store for temp data, caches, and scratch buffers only."},
-{s:"Amazon EC2",q:"What is EC2 User Data?",a:"A script (bash/PowerShell) that runs once when an instance first launches. Used for bootstrapping: installing software, configuring settings. Runs as root. Does NOT run on subsequent reboots."},
-{s:"Amazon EC2",q:"What is a Golden AMI?",a:"A pre-configured, patched, hardened AMI ready to launch with all required software installed. Built with EC2 Image Builder. Ensures consistent configuration across fleet. Faster launch than installing software via User Data."},
-{s:"Amazon EC2",q:"Dedicated Host vs Dedicated Instance: what is the difference?",a:"Dedicated Host = physical server dedicated to you with socket/core visibility — use for BYOL software licenses. Dedicated Instance = runs on hardware dedicated to your account, but no placement control. Dedicated Host is more expensive and granular."},
-{s:"Amazon EC2",q:"What does EC2 Enhanced Networking provide?",a:"Higher bandwidth, higher packet-per-second performance, lower latency. Uses Elastic Network Adapter (ENA) for up to 100 Gbps. Elastic Fabric Adapter (EFA) adds MPI support for HPC/ML tightly coupled workloads."},
-// ── AWS Lambda ──
-{s:"AWS Lambda",q:"What are Lambda's memory and timeout limits?",a:"Memory: 128 MB – 10,240 MB (10 GB). Timeout: up to 15 minutes. CPU scales proportionally with memory. Deployment package: 50 MB zipped, 250 MB unzipped. Container images: up to 10 GB."},
-{s:"AWS Lambda",q:"What is Lambda Provisioned Concurrency?",a:"Pre-warms execution environments to eliminate cold starts. Useful for latency-sensitive APIs. Costs more than on-demand concurrency. Can be configured with Auto Scaling to match predicted traffic patterns."},
-{s:"AWS Lambda",q:"What is Lambda's reserved vs unreserved concurrency?",a:"Reserved Concurrency = maximum concurrent executions for one function (throttles above limit, protecting other functions). Unreserved = shared pool. Account default: 1,000 concurrent executions per region (can be increased)."},
-{s:"AWS Lambda",q:"How do you minimize Lambda cold starts?",a:"1. Keep package size small. 2. Use Provisioned Concurrency for critical functions. 3. Initialize DB connections and load configs outside the handler — they persist across warm invocations. 4. Avoid large dependencies."},
-{s:"AWS Lambda",q:"What is Lambda@Edge vs CloudFront Functions?",a:"Lambda@Edge: Node.js/Python, runs at ~13 regional edge locations, up to 5s timeout, can modify request/response. CloudFront Functions: JavaScript only, sub-millisecond, runs at all 400+ PoPs, for lightweight header/URL manipulation."},
-{s:"AWS Lambda",q:"What is the Lambda Destinations feature?",a:"For async invocations — routes successful or failed events to a destination (SQS, SNS, Lambda, EventBridge). Replaces dead-letter queues for async error handling. Provides more metadata about the invocation than DLQ."},
-// ── Amazon VPC ──
-{s:"Amazon VPC",q:"Security Group vs NACL: what is the key difference?",a:"Security Group = stateful (return traffic auto-allowed), instance-level, allow rules only. NACL = stateless (must explicitly allow return traffic), subnet-level, both allow and deny rules. NACLs apply to all instances in a subnet."},
-{s:"Amazon VPC",q:"NAT Gateway vs NAT Instance?",a:"NAT Gateway = AWS managed, auto-scales, HA within an AZ, no patching. NAT Instance = EC2 you manage, must disable source/dest check, single point of failure. Always use NAT Gateway for production. Deploy one per AZ for HA."},
-{s:"Amazon VPC",q:"What is VPC Peering and its limitation?",a:"Direct network connection between two VPCs over AWS backbone. NOT transitive — if A peers with B and B peers with C, A cannot reach C through B. Supports cross-account and cross-region. Route tables must be updated on both sides."},
-{s:"Amazon VPC",q:"What problem does Transit Gateway solve?",a:"Connects many VPCs and on-premises networks through a single hub (avoids N×(N-1)/2 VPC peering connections). Supports transitive routing. Can be shared across accounts via Resource Access Manager. Attach VPCs, VPNs, and Direct Connect."},
-{s:"Amazon VPC",q:"What does VPC Flow Logs capture?",a:"IP traffic metadata (source/dest IP, port, protocol, action, bytes) for VPC network interfaces. Does NOT capture packet payload, DNS queries to Route 53, or instance metadata (169.254.169.254) traffic. Stored in CloudWatch Logs or S3."},
-{s:"Amazon VPC",q:"What is an Egress-Only Internet Gateway?",a:"Allows outbound-only IPv6 connectivity from private subnet instances. Blocks unsolicited inbound IPv6 connections. The IPv6 equivalent of a NAT Gateway — but without address translation (all IPv6 addresses are public)."},
-{s:"Amazon VPC",q:"How many IPs does AWS reserve per subnet?",a:"5 IPs: .0 (network address), .1 (VPC router), .2 (DNS), .3 (reserved for future use), last IP (broadcast). E.g., a /28 subnet has 16 IPs but only 11 usable. Account for this when planning CIDR blocks."},
-{s:"Amazon VPC",q:"What is VPC PrivateLink?",a:"Exposes a service in your VPC to consumers via an Interface Endpoint — without internet exposure or VPC peering. Traffic stays on AWS network. Used for third-party SaaS and AWS services (SSM, Secrets Manager, etc.)."},
-{s:"Amazon VPC",q:"What is the difference between an Interface Endpoint and a Gateway Endpoint?",a:"Gateway Endpoint: S3 and DynamoDB only, free, uses route table. Interface Endpoint (PrivateLink): supports 100+ AWS services, uses an ENI with a private IP in your subnet, costs per hour + per GB. Both keep traffic off the internet."},
-// ── Amazon RDS ──
-{s:"Amazon RDS",q:"What is RDS Multi-AZ and can you read from the standby?",a:"Synchronous standby replica in a different AZ for automatic failover (~60–120 sec). The standby is NOT readable — it exists only for DR. Protects against AZ failure, not regional failure."},
-{s:"Amazon RDS",q:"Read Replica vs Multi-AZ: what is each for?",a:"Read Replica = async replication, provides read scaling, can be cross-region, must be manually promoted. Multi-AZ = sync replication, not readable, automatic failover. You can enable Multi-AZ on a Read Replica for HA + read scaling."},
-{s:"Amazon RDS",q:"What RDS backup options exist and what enables PITR?",a:"Automated backups = daily snapshot + transaction logs, 0–35 day retention, enables PITR to any second. Manual snapshots = retained until you delete them. Both stored in S3. PITR creates a new DB instance (doesn't overwrite existing)."},
-{s:"Amazon RDS",q:"How do you encrypt an existing unencrypted RDS database?",a:"You cannot enable encryption on an existing DB. Process: 1) Take a snapshot. 2) Copy the snapshot with encryption enabled. 3) Restore the encrypted snapshot to a new DB. 4) Update application to use new endpoint."},
-{s:"Amazon RDS",q:"What RDS database engines are supported?",a:"MySQL, PostgreSQL, MariaDB, Oracle, Microsoft SQL Server, and Amazon Aurora. Aurora is AWS's cloud-native engine — MySQL and PostgreSQL compatible — with up to 5× MySQL performance."},
-{s:"Amazon RDS",q:"What is the difference between CloudWatch metrics and RDS Enhanced Monitoring?",a:"CloudWatch metrics = hypervisor-level (CPU, network). Enhanced Monitoring = OS-level agent metrics (CPU steal, memory, disk I/O, swap) at up to 1-second granularity. Useful for diagnosing DB performance bottlenecks."},
-{s:"Amazon RDS",q:"What is RDS Performance Insights?",a:"Visualizes database load by top SQL, top wait events, and top hosts. Helps identify slow queries and bottlenecks. Free for 7 days of retention. Works with MySQL, PostgreSQL, Aurora, Oracle, SQL Server."},
-// ── Amazon Aurora ──
-{s:"Amazon Aurora",q:"What is Aurora's storage architecture?",a:"Distributed storage across 3 AZs with 6 copies of data (4/6 for writes, 3/6 for reads). Auto-scales in 10 GB increments up to 128 TB. No storage pre-provisioning — you pay for what you use."},
-{s:"Amazon Aurora",q:"What is Aurora Global Database?",a:"Replicates data to up to 5 secondary AWS regions with typically <1 second lag. Managed failover promotes secondary to primary in under 1 minute. Designed for RPO <1 second and RTO <1 minute cross-region DR."},
-{s:"Amazon Aurora",q:"What is Aurora Serverless v2?",a:"Auto-scales Aurora capacity units (ACUs) in fine-grained increments based on load. Scales to zero when idle (v1) or to a minimum ACU (v2). Billed per second. Use for unpredictable workloads, dev/test, and multi-tenant apps."},
-{s:"Amazon Aurora",q:"How does Aurora failover differ from RDS Multi-AZ failover?",a:"Aurora: promotes a Read Replica to writer (typically <30 sec). All replicas share the same storage — no data loss or replay needed. RDS Multi-AZ: promotes standby via DNS failover (60–120 sec). Aurora is faster because storage is shared."},
-// ── Amazon DynamoDB ──
-{s:"Amazon DynamoDB",q:"What are the DynamoDB primary key options?",a:"Partition key only (simple key) — must be unique per item. Partition key + Sort key (composite key) — partition key can repeat, but the combination must be unique. Partition key determines which partition stores the item."},
-{s:"Amazon DynamoDB",q:"What is DynamoDB's consistency model?",a:"Eventual Consistency (default, cheaper) — reads may lag writes by <1 sec. Strongly Consistent reads — always return latest data, cost 2× RCUs. Use strong consistency for financial or inventory systems that cannot tolerate stale data."},
-{s:"Amazon DynamoDB",q:"What is DynamoDB DAX?",a:"DynamoDB Accelerator — in-memory cache with microsecond read latency. API-compatible (no application code changes). Reduces RCU consumption on hot items. Great for leaderboards, product catalogs, and read-heavy workloads."},
-{s:"Amazon DynamoDB",q:"Provisioned vs On-Demand capacity mode: when to use each?",a:"Provisioned = set RCU/WCU upfront, cheaper for predictable traffic, supports Auto Scaling. On-Demand = auto-scales instantly with no capacity planning, costs ~2.5× more per request but no throttling risk. Switch modes up to twice per day."},
-{s:"Amazon DynamoDB",q:"What is a DynamoDB Global Secondary Index (GSI)?",a:"A separate index with a different partition key (and optional sort key) that enables queries on non-primary-key attributes. Has its own provisioned capacity. Supports eventual consistency only. Up to 20 GSIs per table."},
-{s:"Amazon DynamoDB",q:"What is DynamoDB Streams?",a:"Captures item-level changes (INSERT, MODIFY, REMOVE) in a 24-hour changelog. Ordered per partition key. Triggers Lambda for event-driven processing. Also used for cross-region replication and audit logging."},
-{s:"Amazon DynamoDB",q:"What is DynamoDB Point-in-Time Recovery (PITR)?",a:"Continuous automatic backups for any second within the last 35 days. Must be enabled before an incident. Restores to a NEW table (doesn't overwrite). Protects against accidental bulk deletes or data corruption."},
-// ── Elastic Load Balancing ──
-{s:"Elastic Load Balancing",q:"ALB vs NLB vs Gateway Load Balancer: when to use each?",a:"ALB (Layer 7) = HTTP/HTTPS, path/host/header routing, WebSocket. NLB (Layer 4) = TCP/UDP, ultra-low latency, static IP, millions of req/sec. GLB = route traffic through third-party virtual appliances (firewalls, IDS/IPS)."},
-{s:"Elastic Load Balancing",q:"What are ALB's advanced routing features?",a:"Path-based (/api/* → service A), host-based (app.example.com → B), HTTP header/query string conditions, weighted routing (blue/green deploys), Lambda as a target. Each rule routes to a separate Target Group."},
-{s:"Elastic Load Balancing",q:"How do you get a static IP for an Application Load Balancer?",a:"ALBs use DNS, not static IPs. Options: 1) Put NLB in front of ALB (NLB has static IPs). 2) Use AWS Global Accelerator — provides anycast static IPs that route to your ALB. Important for IP whitelisting requirements."},
-{s:"Elastic Load Balancing",q:"What is Connection Draining / Deregistration Delay?",a:"Time the load balancer waits for in-flight requests to complete before marking a target as deregistered. Default 300 sec, range 0–3600. Set low (30s) for fast rolling deploys; keep high for long-running connections."},
-{s:"Elastic Load Balancing",q:"What health check setting is most commonly misconfigured?",a:"The target's security group not allowing inbound traffic from the ALB's security group on the health check port. The fix: add an inbound rule on the instance security group referencing the ALB's security group ID (not a CIDR block)."},
-// ── Amazon CloudFront ──
-{s:"Amazon CloudFront",q:"What origin types does CloudFront support?",a:"S3 bucket, HTTP/HTTPS origin (ALB, EC2, on-premises servers), API Gateway, Lambda Function URL, MediaStore, MediaPackage. You can configure multiple origins with different cache behaviors (path patterns)."},
-{s:"Amazon CloudFront",q:"What is CloudFront Origin Access Control (OAC)?",a:"Restricts S3 bucket access so only CloudFront can read it (via bucket policy). Replaces the older OAI (Origin Access Identity). Prevents users from bypassing CloudFront and hitting S3 directly. Required for S3 SSE-KMS content."},
-{s:"Amazon CloudFront",q:"Signed URL vs Signed Cookie: when to use each?",a:"Signed URL = access to a single object. Best for single-file downloads or RTMP streaming. Signed Cookie = access to multiple files without changing individual URLs. Best for premium content libraries. Both require a trusted key group."},
-{s:"Amazon CloudFront",q:"What is CloudFront cache invalidation?",a:"Removes objects from edge caches before TTL expires. Cost: $0.005 per path (first 1,000/month free). Wildcards supported (/images/*). Better long-term approach: use versioned file names or query strings to bust the cache automatically."},
-// ── AWS IAM ──
-{s:"AWS IAM",q:"What is the IAM policy evaluation order?",a:"1. Explicit Deny (always wins). 2. SCPs from Organizations. 3. Resource-based policies. 4. IAM permissions boundaries. 5. Identity-based policies. 6. Session policies. Implicit deny if no explicit allow is found anywhere."},
-{s:"AWS IAM",q:"What is an IAM permissions boundary?",a:"A managed policy that sets the MAXIMUM permissions an IAM entity can have. The entity can only do what BOTH the boundary AND the identity policy allow. Used to safely delegate IAM management — admins can't grant more than the boundary allows."},
-{s:"AWS IAM",q:"What is an IAM role vs an IAM user?",a:"User = long-term credentials (password + access keys). Role = temporary credentials via STS AssumeRole (15 min–12 hrs). Use roles for EC2 instance profiles, cross-account access, Lambda, and federated SSO. Avoid long-term keys."},
-{s:"AWS IAM",q:"What is a resource-based policy? Give an example.",a:"A policy attached directly to a resource (not an identity). Example: S3 bucket policy, KMS key policy, Lambda resource policy. Allows cross-account access without assuming a role. Both the identity and resource policies must allow the action."},
-{s:"AWS IAM",q:"What is AWS IAM Access Analyzer?",a:"Identifies resources shared with external principals (public or cross-account). Analyzes S3, IAM roles, KMS keys, Lambda, SQS, Secrets Manager. Generates findings for unintended access. Also validates IAM policies for syntax and best practices."},
-{s:"AWS IAM",q:"What is AWS Organizations SCP?",a:"Service Control Policy — sets permission guardrails for an entire OU or account. Does NOT grant permissions — only restricts what identities in member accounts can do. Applies to all principals including root. Management account is exempt from SCPs."},
-{s:"AWS IAM",q:"What is IAM Roles Anywhere?",a:"Extends IAM roles to workloads outside AWS (on-premises servers, VMs, containers). Uses X.509 certificates from your PKI as identity. Returns short-lived STS credentials. Eliminates long-term access keys for on-premises workloads."},
-// ── Amazon SQS ──
-{s:"Amazon SQS",q:"What is SQS visibility timeout and what problem does it solve?",a:"Time a message is hidden from other consumers after being received. Default 30 sec, max 12 hrs. If processing exceeds the timeout, SQS makes the message visible again → duplicate processing. Always set it longer than your max processing time."},
-{s:"Amazon SQS",q:"SQS Standard vs FIFO queue: what are the trade-offs?",a:"Standard = unlimited throughput, at-least-once delivery, best-effort ordering. FIFO = exactly-once processing, guaranteed ordering, 300 TPS (3,000 with batching), requires .fifo suffix. Use FIFO for financial transactions or order processing."},
-{s:"Amazon SQS",q:"What is a Dead-Letter Queue (DLQ)?",a:"A queue where messages are moved after failing to be processed N times (configured by maxReceiveCount). Used for debugging failed messages. DLQ must be the same queue type (Standard or FIFO) as the source. Set up CloudWatch alarms on DLQ depth."},
-{s:"Amazon SQS",q:"What is SQS Long Polling?",a:"Consumer waits up to 20 seconds for a message if the queue is empty (vs short polling which returns immediately). Reduces empty receives and API costs. Enable by setting ReceiveMessageWaitTimeSeconds to 1–20 on the queue or receive request."},
-{s:"Amazon SQS",q:"What is the SQS message size limit and how do you handle larger payloads?",a:"256 KB per message. For larger payloads: store the data in S3, put the S3 object reference in the SQS message. Use the Amazon SQS Extended Client Library (Java) to automate this pattern transparently."},
-// ── Amazon SNS ──
-{s:"Amazon SNS",q:"What is the SNS fan-out pattern?",a:"One SNS topic simultaneously delivers messages to multiple subscribers: SQS queues, Lambda functions, HTTP endpoints, email, SMS, mobile push. Add SQS queues for buffering and durability. One SNS publish → many parallel consumers."},
-{s:"Amazon SNS",q:"What is SNS message filtering?",a:"Subscription filter policies (JSON on the subscription) let each subscriber receive only messages matching specific attribute conditions. Reduces unnecessary invocations. Example: only send 'order.placed' events to the fulfillment service."},
-{s:"Amazon SNS",q:"SNS vs SQS: what is the fundamental difference?",a:"SNS = push-based pub/sub, no persistence (messages lost if not delivered). SQS = pull-based queue, stores messages up to 14 days. SNS delivers to multiple subscribers; SQS serves one consumer group. Combine them: SNS → SQS for durable fan-out."},
-// ── Amazon Route 53 ──
-{s:"Amazon Route 53",q:"What are all the Route 53 routing policies?",a:"Simple (one resource), Weighted (A/B or gradual shift), Latency-based (lowest latency to user), Failover (active-passive DR), Geolocation (by user geography), Geoproximity (location + adjustable bias), Multivalue Answer (multiple healthy IPs)."},
-{s:"Amazon Route 53",q:"What is a Route 53 Alias record and how does it differ from CNAME?",a:"Alias = AWS extension pointing to AWS resources (CloudFront, ELB, S3, another R53 record). Free for AWS resource queries, works at zone apex (example.com). CNAME = standard DNS, cannot be at zone apex, costs per query, works for any hostname."},
-{s:"Amazon Route 53",q:"How do Route 53 health checks enable failover?",a:"R53 health checks monitor endpoints (HTTP/HTTPS/TCP) from multiple AWS regions. When a health check fails, R53 stops routing traffic to that record. Used with Failover, Weighted, Latency, and Geolocation routing policies for automated DR."},
-{s:"Amazon Route 53",q:"What is a Route 53 Private Hosted Zone?",a:"DNS resolution within one or more VPCs — records only resolvable from associated VPCs. Requires enableDnsHostnames = true and enableDnsSupport = true on the VPC. Used for internal service discovery without exposing DNS publicly."},
-{s:"Amazon Route 53",q:"What is Route 53 Resolver?",a:"Provides DNS resolution between on-premises networks and AWS VPCs. Inbound endpoints: on-premises DNS forwards queries to Route 53. Outbound endpoints: VPC instances forward queries to on-premises DNS. Enables hybrid DNS architecture."},
-// ── AWS KMS ──
-{s:"AWS KMS",q:"What are the types of KMS keys?",a:"AWS managed keys: free, auto-rotated annually, limited policy control. Customer managed keys (CMKs): $1/month, you control key policy, rotation, enable/disable. AWS owned keys: internally by AWS, no visibility. Data keys: generated by GenerateDataKey for envelope encryption."},
-{s:"AWS KMS",q:"What is KMS envelope encryption?",a:"Use KMS to generate a data key → encrypt data locally with the data key → store the encrypted data key alongside the ciphertext. To decrypt: call KMS to decrypt the data key → use plaintext data key locally. Reduces KMS API calls and latency for large data."},
-{s:"AWS KMS",q:"How does KMS key rotation work?",a:"AWS managed keys: automatically rotated every year. CMKs: optional — enable auto-rotation (new backing key generated annually, old keys retained to decrypt old ciphertexts). Manual rotation: create a new CMK and update application to use the new key ID."},
-{s:"AWS KMS",q:"SSE-S3 vs SSE-KMS vs SSE-C: what are the differences?",a:"SSE-S3: AWS manages keys (AES-256), no per-request audit trail. SSE-KMS: uses KMS CMK, every encrypt/decrypt logged in CloudTrail, customer controls key policy. SSE-C: customer provides key in each API request, AWS doesn't store key, no CloudTrail."},
-// ── Amazon ElastiCache ──
-{s:"Amazon ElastiCache",q:"Redis vs Memcached: when to choose each?",a:"Redis = supports persistence (AOF/RDB), replication, Multi-AZ failover, pub/sub, sorted sets, Streams, cluster mode for sharding. Memcached = multi-threaded, simpler, no persistence, no replication. Choose Redis for HA and rich data structures; Memcached for simple horizontal scaling."},
-{s:"Amazon ElastiCache",q:"What is ElastiCache Redis Cluster Mode?",a:"Shards data across multiple node groups (shards) for horizontal write scaling. Without cluster mode = one primary with up to 5 replicas. With cluster mode = up to 500 node groups, each with up to 5 replicas. Required for datasets larger than one node's memory."},
-{s:"Amazon ElastiCache",q:"What are the primary use cases for ElastiCache?",a:"Session caching, database query result caching, leaderboards (Redis sorted sets), real-time analytics, rate limiting, frequently-read reference data. Dramatically reduces RDS/DynamoDB read load and improves response times."},
-{s:"Amazon ElastiCache",q:"What is ElastiCache for Redis Multi-AZ with auto-failover?",a:"Enables automatic promotion of a read replica to primary if the primary node fails. DNS endpoint updates to the new primary. Requires at least 1 replica. Failover typically completes in under 1 minute. Requires cluster mode disabled or enabled."},
-// ── Amazon CloudWatch ──
-{s:"Amazon CloudWatch",q:"CloudWatch Metrics vs Logs vs Alarms: what is each?",a:"Metrics = numeric time-series data (CPU, request count). Logs = raw log text from services/apps/agents. Alarms = trigger actions (SNS, Auto Scaling, EC2) when a metric crosses a threshold. Logs Insights = query logs with SQL-like syntax for analysis."},
-{s:"Amazon CloudWatch",q:"What OS-level metrics does CloudWatch NOT collect by default?",a:"Memory utilization, disk space, swap usage, disk I/O at the process level. These require the CloudWatch Agent (or unified CloudWatch Agent) installed on the instance. By default, EC2 only reports CPU, network, and disk I/O at the hypervisor level."},
-{s:"Amazon CloudWatch",q:"What is a CloudWatch Composite Alarm?",a:"Combines multiple alarms with AND/OR logic into one parent alarm. Reduces alarm noise — alert only when multiple conditions are true simultaneously (e.g., high CPU AND high error rate). Reduces SNS noise and unnecessary paging."},
-{s:"Amazon CloudWatch",q:"What is CloudWatch Contributor Insights?",a:"Analyzes log data to identify top contributors causing high traffic, errors, or latency. Example: identify the top 10 IP addresses with the most requests. Uses rule-based analysis on CloudWatch Logs. Useful for finding noisy neighbors or abusive clients."},
-// ── EC2 Auto Scaling ──
-{s:"EC2 Auto Scaling",q:"What Auto Scaling policy types are available?",a:"Target Tracking = maintain a metric at a target (e.g., 70% CPU). Step Scaling = incremental changes based on alarm magnitude. Simple Scaling = one change per alarm, with cooldown period. Scheduled = scale at specific times. Predictive = ML-based proactive scaling."},
-{s:"EC2 Auto Scaling",q:"What is an ASG lifecycle hook?",a:"Pauses an instance during launch or termination to run custom actions (install software, drain connections, back up state). Timeout: up to 1 hour. Complete with CompleteLifecycleAction API. Use EventBridge or SNS to trigger Lambda for the hook action."},
-{s:"EC2 Auto Scaling",q:"What is the default ASG termination policy?",a:"1. Select the AZ with the most instances. 2. Terminate the oldest launch configuration/template. 3. If tied, terminate the instance closest to the next billing hour. Override with a custom termination policy or use Instance Protection to prevent specific instances from termination."},
-// ── AWS Direct Connect ──
-{s:"AWS Direct Connect",q:"What is a Direct Connect Virtual Interface (VIF)?",a:"Private VIF = connects to a VPC via Virtual Private Gateway or Transit Gateway. Public VIF = reaches AWS public endpoints (S3, DynamoDB) without internet. Transit VIF = connects to Transit Gateway for multi-VPC access. Each VIF uses a VLAN and BGP session."},
-{s:"AWS Direct Connect",q:"What is a Direct Connect Gateway?",a:"Allows one Direct Connect connection to reach VPCs in multiple AWS regions globally. Associate multiple Virtual Private Gateways from different regions. No additional hop latency — traffic still uses the DX physical connection to the nearest AWS region."},
-{s:"AWS Direct Connect",q:"How do you achieve Direct Connect redundancy?",a:"Highest resilience: two connections at two DIFFERENT Direct Connect locations + Site-to-Site VPN as internet backup. Connection-level redundancy (2 connections, same location) protects against fiber cuts but not facility outage. Use the DX Resiliency Toolkit to validate your setup."},
-// ── Amazon Kinesis ──
-{s:"Amazon Kinesis",q:"What are the four Kinesis services?",a:"Kinesis Data Streams = real-time streaming, sharded, replay-able, multiple consumers. Kinesis Firehose = managed delivery to S3/Redshift/OpenSearch/Splunk, ~60-sec latency. Kinesis Data Analytics = SQL/Flink on streams. Kinesis Video Streams = ingest/process video."},
-{s:"Amazon Kinesis",q:"What is a Kinesis Data Streams shard?",a:"Unit of capacity. Each shard: 1 MB/s write (1,000 records/sec), 2 MB/s read. Add shards by splitting (more throughput), merge to reduce cost. Default data retention: 24 hours (up to 365 days). Use Enhanced Fan-Out for multiple independent consumers."},
-{s:"Amazon Kinesis",q:"Kinesis Data Streams vs SQS: when to choose each?",a:"Kinesis = ordered within shard, replay-able (multiple consumers read independently), real-time analytics. SQS = at-least-once delivery, FIFO option, message deleted after processing, one consumer group. Use Kinesis for streaming analytics; SQS for decoupled microservices."},
-{s:"Amazon Kinesis",q:"What is Kinesis Enhanced Fan-Out?",a:"Each registered consumer gets a dedicated 2 MB/s read throughput per shard (vs shared 2 MB/s in standard get-records polling). Uses HTTP/2 push (no polling). Supports up to 20 registered consumers per stream. Reduces latency from seconds to ~70 ms."},
-// ── Amazon EFS ──
-{s:"Amazon EFS",q:"EFS vs EBS: what is the fundamental difference?",a:"EFS = NFS shared file system, mounted by multiple EC2 instances across multiple AZs simultaneously. Auto-scales, no pre-provisioning. ~3× more expensive than EBS. EBS = block storage attached to ONE instance (except io1/io2 Multi-Attach within one AZ)."},
-{s:"Amazon EFS",q:"What are EFS storage classes?",a:"Standard = frequently accessed. Standard-IA = infrequent access, cheaper storage + retrieval fee. One Zone = single AZ, 47% cheaper than Standard but lower durability. One Zone-IA = cheapest EFS tier. Lifecycle policies auto-move files based on last access time."},
-{s:"Amazon EFS",q:"What EFS performance and throughput modes exist?",a:"Performance: General Purpose (low latency, default), Max I/O (higher throughput, higher latency — for massively parallel apps). Throughput: Elastic (auto-scales, recommended), Provisioned (set GB/s regardless of size), Bursting (based on storage size, bursty workloads)."}
-];
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// FLASHCARDS LOGIC
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-let FC = { deck: [...FC_CARDS], idx: 0, shuffled: false, service: 'All' };
-
-function initFlashcards() {
-  // Populate service dropdown
-  const sel = document.getElementById('fc-service-sel');
-  const services = ['All', ...new Set(FC_CARDS.map(c => c.s))];
-  sel.innerHTML = services.map(sv => `<option value="${sv}"${sv===FC.service?' selected':''}>${sv === 'All' ? '🔷 All Services' : sv}</option>`).join('');
-  // Rebuild deck from current filter
-  FC.deck = FC.service === 'All' ? [...FC_CARDS] : FC_CARDS.filter(c => c.s === FC.service);
-  if (FC.shuffled) FC.deck = shuffle(FC.deck);
-  FC.idx = Math.min(FC.idx, FC.deck.length - 1);
-  document.getElementById('fc-shuffle-btn').classList.toggle('on', FC.shuffled);
-  renderFC();
-}
-
-function fcFilter() {
-  FC.service = document.getElementById('fc-service-sel').value;
-  FC.deck = FC.service === 'All' ? [...FC_CARDS] : FC_CARDS.filter(c => c.s === FC.service);
-  if (FC.shuffled) FC.deck = shuffle(FC.deck);
-  FC.idx = 0;
-  renderFC();
-}
-
-function fcShuffle() {
-  FC.shuffled = !FC.shuffled;
-  document.getElementById('fc-shuffle-btn').classList.toggle('on', FC.shuffled);
-  if (FC.shuffled) FC.deck = shuffle([...FC.deck]);
-  else { FC.deck = FC.service === 'All' ? [...FC_CARDS] : FC_CARDS.filter(c => c.s === FC.service); }
-  FC.idx = 0;
-  renderFC();
-}
-
-function renderFC() {
-  const card = FC.deck[FC.idx];
-  const total = FC.deck.length;
-  // Reset flip state
-  document.getElementById('fc-card').classList.remove('flipped');
-  // Update counter
-  document.getElementById('fc-counter').textContent = `${FC.idx + 1} of ${total} cards`;
-  // Render front
-  document.getElementById('fc-front').innerHTML = `
-    <div class="fc-service-tag">${card.s}</div>
-    <div class="fc-q">${card.q}</div>
-    <div class="fc-hint">Tap to reveal answer</div>`;
-  // Render back
-  document.getElementById('fc-back').innerHTML = `
-    <div class="fc-service-tag">${card.s}</div>
-    <div class="fc-a">${card.a}</div>`;
-  // Nav buttons
-  document.getElementById('fc-prev').disabled = FC.idx === 0;
-  document.getElementById('fc-next').disabled = FC.idx === total - 1;
-  document.getElementById('fc-pos').textContent = `${FC.idx + 1} / ${total}`;
-}
-
-function fcFlip() {
-  document.getElementById('fc-card').classList.toggle('flipped');
-}
-
-function fcNext() {
-  if (FC.idx < FC.deck.length - 1) { FC.idx++; renderFC(); }
-}
-
-function fcPrev() {
-  if (FC.idx > 0) { FC.idx--; renderFC(); }
-}
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// INIT
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-touchStreak();
-renderHome();
-</script>
-</body>
-</html>
+  c
