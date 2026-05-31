@@ -380,7 +380,7 @@ h2{font-size:18px;font-weight:700}
 
 <script>
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// QUESTION BANK  (370 exam-quality questions)
+// QUESTION BANK  (395 exam-quality questions)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const Q = [
 // ── DOMAIN 1: SECURE ARCHITECTURES ──
@@ -2570,4 +2570,503 @@ e:"<strong>Correct: IAM Permissions Boundaries.</strong> A permissions boundary 
 q:"A company runs a web application on an Amazon EC2 Auto Scaling group behind an Application Load Balancer. The application requires 3 minutes to complete initialization (pulling configuration from AWS AppConfig, warming caches) before it can serve traffic. During scaling events, the Auto Scaling group currently brings new instances into service immediately, causing users to receive errors from uninitialized instances. What should the solutions architect configure to eliminate these errors?",
 o:["Increase the ALB target group health check interval to 5 minutes so new instances have time to initialize before health checks pass","Configure an EC2 Auto Scaling lifecycle hook on the EC2_INSTANCE_LAUNCHING transition. During the hook, the instance completes initialization and calls CompleteLifecycleAction when ready. Configure the ALB target group deregistration delay to 0 seconds","Configure an EC2 Auto Scaling warm pool to pre-initialize instances in a Stopped state so they are already initialized when brought into service","Use an Elastic Load Balancing connection draining policy to delay new instance registration until the instance signals readiness"],
 c:2,
-e:"<strong>Correct: EC2 Auto Scaling Warm Pool.</strong> A warm pool maintains a pool of pre-initialized EC2 in
+e:"<strong>Correct: EC2 Auto Scaling Warm Pool.</strong> A warm pool maintains a pool of pre-initialized EC2 instances in a Stopped or Running state. When the Auto Scaling group needs to scale out, instances from the warm pool are brought into service — they have already completed the 3-minute initialization. The time from scaling trigger to serving traffic is reduced from 3+ minutes to near-instant. Warm pool instances can run initialization scripts when they first join the warm pool (via lifecycle hooks on the warm pool), so by the time they're needed, they're fully ready. <strong>Why not A:</strong> Increasing health check interval to 5 minutes means the ALB waits 5 minutes before marking the instance healthy — but this also delays detection of genuinely unhealthy instances, reducing fault detection responsiveness. Also, instances could still receive traffic before health checks pass depending on configuration. <strong>Why not B:</strong> EC2 Auto Scaling lifecycle hooks (EC2_INSTANCE_LAUNCHING) do prevent the instance from entering InService state until CompleteLifecycleAction is called — this IS a valid approach. However, the warm pool answer is considered best because warm pool pre-initializes instances before they are needed, while lifecycle hooks still require the initialization time during the scale-out event itself. The question asks to eliminate errors, which warm pool does more effectively for time-sensitive applications. <strong>Why not D:</strong> ELB connection draining (deregistration delay) delays DEREGISTRATION of terminating instances — it has no effect on registration of new instances. It protects in-flight requests during scale-in, not initialization during scale-out."},
+{id:369,domain:"Resilient Architectures",topic:"Databases",sub:"Aurora Global Database",
+q:"A company runs a global e-commerce platform with Amazon Aurora MySQL as the primary database in us-east-1. The company is expanding to Europe and Asia and needs database reads to complete in under 100 milliseconds for users in those regions. Additionally, in the event of a us-east-1 outage, the company needs to resume write operations in another region within 1 minute (RTO). The company cannot tolerate data loss of more than 1 second of transactions (RPO). What should the solutions architect implement?",
+o:["Deploy Aurora Read Replicas in eu-west-1 and ap-southeast-1 to serve local reads; promote a replica to primary manually if us-east-1 fails","Implement Aurora Global Database with secondary regions in eu-west-1 and ap-southeast-1. Use the global database managed failover to promote a secondary region to primary, and configure application connection strings to use the regional cluster endpoints for reads","Use Amazon RDS for MySQL with Multi-Region read replicas and AWS Database Migration Service for ongoing replication; promote a replica using DMS in case of failure","Deploy separate Aurora clusters in each region and use Amazon EventBridge to synchronize writes across all three regions in real time"],
+c:1,
+e:"<strong>Correct: Aurora Global Database.</strong> Aurora Global Database uses dedicated infrastructure to replicate data across AWS Regions with typical latency under 1 second — meeting the 1-second RPO requirement. Secondary region clusters receive replicated data from the primary and can serve local read traffic with under 100ms latency. For failover, Aurora Global Database supports managed planned failover (RPO approximately 0) and unplanned failover with RTO typically under 1 minute. Applications use region-specific cluster endpoints for reads to achieve low-latency local reads. <strong>Why not A:</strong> Standard Aurora Read Replicas replicate within a Region — cross-Region replication requires Aurora Global Database or database-level replication. Manual promotion requires DBA intervention and does not guarantee sub-1-minute RTO. <strong>Why not C:</strong> RDS (non-Aurora) read replicas have higher replication lag than Aurora Global Database and DMS failover is complex. RDS does not offer sub-1-second cross-region replication lag. <strong>Why not D:</strong> Synchronizing writes across three regions via EventBridge creates an eventually consistent multi-master architecture that is complex to implement and prone to conflicts."},
+{id:370,domain:"Resilient Architectures",topic:"Messaging",sub:"SQS Dead Letter Queues",
+q:"A company processes financial transaction messages from an Amazon SQS queue using AWS Lambda. Occasionally, certain messages cause Lambda to throw an unhandled exception. These messages are retried repeatedly and block other messages in the queue from being processed. The company needs to isolate failed messages for investigation without losing them, alert the operations team when messages fail, and prevent repeated retries from consuming Lambda invocation quota. What should the solutions architect configure?",
+o:["Increase the Lambda function timeout so that it has more time to process difficult messages before timing out","Configure an SQS Dead Letter Queue (DLQ) for the source queue with a maxReceiveCount of 3. Create an Amazon CloudWatch alarm on the NumberOfMessagesSent metric for the DLQ that triggers an SNS notification to the operations team","Set the SQS visibility timeout to 24 hours so failed messages are hidden for a full day before being retried","Enable SQS message deduplication to prevent the same message from being processed more than once"],
+c:1,
+e:"<strong>Correct: SQS Dead Letter Queue + CloudWatch alarm on DLQ.</strong> A Dead Letter Queue captures messages that fail processing after a configured number of attempts (maxReceiveCount). Setting maxReceiveCount to 3 means: Lambda tries to process the message, fails, the message becomes visible again, and after 3 receive attempts, SQS moves the message to the DLQ. The message is preserved in the DLQ for investigation (up to 14 days). A CloudWatch alarm on the DLQ triggers SNS to alert the operations team. This prevents the message from consuming Lambda invocations indefinitely. <strong>Why not A:</strong> Increasing Lambda timeout helps with timeouts but not with code exceptions. If the message content triggers a bug, more time does not help. <strong>Why not C:</strong> A 24-hour visibility timeout makes failed messages invisible for 24 hours — they would accumulate and retry in bulk, creating a delayed retry storm. <strong>Why not D:</strong> SQS deduplication prevents duplicate messages within a 5-minute window. It does not prevent retries of genuinely failed messages. Deduplication applies to FIFO queues, not Standard queues."},
+{id:371,domain:"Secure Architectures",topic:"Storage Security",sub:"S3 Access Points",q:"A company stores sensitive customer data in a single Amazon S3 bucket used by multiple applications: a reporting application, a data science team running analytics, and a web application serving customer-facing content. Each application should only be able to access the specific S3 prefixes and objects relevant to its function. The security team wants to simplify per-application access control without creating multiple buckets or complex bucket policies. What should the solutions architect implement?",o:["Create separate IAM roles for each application with inline policies that restrict access to specific S3 key prefixes","Create an S3 Access Point for each application with an access point policy that restricts each application to its specific prefix. Update the bucket policy to delegate access control to the access points","Enable S3 Object Ownership and use ACLs to assign each object to the appropriate application's AWS account","Create an S3 bucket policy with Condition keys based on aws:SourceIp to restrict each application to its network segment"],c:1,e:"<strong>Correct: S3 Access Points.</strong> S3 Access Points are named network endpoints attached to an S3 bucket, each with its own access point policy. A reporting access point policy allows only s3:GetObject on the reports/ prefix; a data science access point policy allows access to the analytics/ prefix; the web application gets its own access point scoped to the public/ prefix. The bucket policy delegates access control to the access points. This eliminates the need for a single complex bucket policy. <strong>Why not A:</strong> IAM role policies work but become complex as the number of applications grows. S3 Access Points provide a cleaner, scalable model. <strong>Why not C:</strong> S3 ACLs are a legacy access control mechanism that AWS recommends disabling. ACLs are per-object and cannot enforce prefix-level restrictions. <strong>Why not D:</strong> Source IP conditions restrict based on network location, not application identity. Applications may share IPs, making IP-based restrictions brittle."},
+{id:372,domain:"Secure Architectures",topic:"Edge Security",sub:"AWS WAF",q:"A company runs a public-facing web application on Amazon CloudFront backed by an Application Load Balancer. The security team has observed a pattern of SQL injection attempts targeting the application login endpoint and wants to block these attacks at the edge before they reach the origin. The team also wants to rate-limit requests to 2,000 per 5 minutes from any single IP address to prevent brute-force attacks. What should the solutions architect configure?",o:["Deploy an AWS Network Firewall in front of the ALB and configure stateful rules to inspect HTTP payloads for SQL injection patterns","Associate an AWS WAF Web ACL with the CloudFront distribution. Add an AWS Managed Rule Group for SQL database (AWSManagedRulesSQLiRuleSet) and add a rate-based rule with a limit of 2,000 requests per 5-minute period per IP","Configure CloudFront geographic restrictions to block high-risk countries and enable CloudFront field-level encryption on the login form","Enable AWS Shield Advanced on the CloudFront distribution and configure Shield Response Team to respond to detected attacks"],c:1,e:"<strong>Correct: AWS WAF with Managed SQL Rule Group + rate-based rule.</strong> AWS WAF integrates natively with CloudFront. The AWSManagedRulesSQLiRuleSet managed rule group inspects HTTP request components for SQL injection patterns and blocks matching requests at the CloudFront edge. Rate-based rules in WAF track request counts per IP over a 5-minute window and automatically block IPs exceeding the threshold. Both protections apply at the CloudFront edge, reducing origin load. <strong>Why not A:</strong> AWS Network Firewall operates at the VPC level and cannot be deployed in front of CloudFront. It also has limited HTTP application-layer inspection. <strong>Why not C:</strong> Geographic restrictions block entire countries — a blunt instrument. Field-level encryption protects data in transit but does not block SQL injection. <strong>Why not D:</strong> AWS Shield Advanced protects against DDoS attacks but does not inspect application-layer payloads for SQL injection or enforce per-IP rate limits."},
+{id:373,domain:"Secure Architectures",topic:"Secrets Management",sub:"Secrets Manager Rotation",q:"A company has a fleet of Amazon EC2 instances running an application that connects to an Amazon RDS for PostgreSQL database using hardcoded credentials stored in application configuration files. A security audit has flagged this as a critical vulnerability. The security team requires that database credentials be rotated automatically every 30 days and that applications always use fresh credentials without requiring instance restarts or redeployments. What should the solutions architect implement?",o:["Store the database credentials in AWS Systems Manager Parameter Store as SecureString parameters and update the EC2 instance launch template to pull credentials at startup","Store the database credentials in AWS Secrets Manager. Enable automatic rotation with a 30-day rotation schedule using the AWS-provided Lambda rotation function for RDS. Update the application to call the Secrets Manager API to retrieve credentials at runtime rather than reading from config files","Encrypt the configuration files containing credentials using AWS KMS and store them in Amazon S3. Update the application to download and decrypt the config file from S3 on startup","Create an IAM role for the EC2 instances with direct RDS IAM database authentication enabled and remove the password-based credentials entirely"],c:1,e:"<strong>Correct: AWS Secrets Manager with automatic rotation.</strong> Secrets Manager stores credentials and supports automatic rotation on a defined schedule. The AWS-provided rotation Lambda function for Amazon RDS automatically creates new credentials in RDS, updates the secret, and tests the new credentials — old credentials remain valid briefly during rotation (dual-user strategy). Applications call secretsmanager:GetSecretValue at runtime to always get current credentials, requiring no restarts. <strong>Why not A:</strong> Parameter Store does not support automatic credential rotation and credentials are pulled only at startup, so rotation would not take effect without a restart. <strong>Why not C:</strong> Downloading encrypted config files from S3 at startup has the same problem — credentials are pulled once at launch. Rotation would require instance restarts. <strong>Why not D:</strong> IAM database authentication eliminates passwords entirely and is an excellent long-term solution, but requires application changes to generate authentication tokens (valid 15 minutes). Secrets Manager rotation is the more straightforward migration path for existing apps."},
+{id:374,domain:"Secure Architectures",topic:"Network Security",sub:"VPC Endpoint Policies",q:"A company application running on Amazon EC2 instances in a private subnet must access Amazon S3 to store and retrieve files. The security team requires that S3 traffic never traverse the public internet, that the instances cannot access any S3 buckets outside the company own AWS account, and that access to S3 is restricted to specific actions (GetObject and PutObject) on specific buckets. How should the solutions architect configure access?",o:["Create a NAT Gateway in a public subnet and update the route table for the private subnet to route S3 traffic through the NAT Gateway","Create an S3 VPC Gateway Endpoint in the VPC. Attach an endpoint policy that restricts access to the company specific S3 buckets and limits allowed actions to s3:GetObject and s3:PutObject. Update the route table to route S3 traffic through the endpoint","Attach an IAM role to the EC2 instances with a policy that allows s3:GetObject and s3:PutObject on the specific buckets. The traffic will automatically stay within AWS","Configure VPC peering between the application VPC and the S3 service VPC to keep traffic off the public internet"],c:1,e:"<strong>Correct: S3 VPC Gateway Endpoint with endpoint policy.</strong> A VPC Gateway Endpoint for S3 routes all S3 traffic from the VPC through AWS private network — traffic never traverses the public internet and no NAT Gateway is needed. The endpoint policy can restrict which S3 buckets are accessible and which API actions are allowed, regardless of IAM policies on the EC2 instances. Use the condition aws:ResourceAccount to prevent access to buckets outside the company account. <strong>Why not A:</strong> A NAT Gateway routes private subnet traffic to the internet — S3 traffic would traverse the public internet, violating the security requirement. <strong>Why not C:</strong> An IAM role on EC2 instances controls identity-based permissions but does not prevent traffic from traversing the public internet. Without a VPC endpoint, S3 traffic exits via the internet gateway or NAT. <strong>Why not D:</strong> Amazon S3 is not a VPC-based service — there is no S3 VPC to peer with. VPC Gateway Endpoints are the correct mechanism."},
+{id:375,domain:"Secure Architectures",topic:"Encryption",sub:"KMS Key Policies",q:"A company uses AWS KMS customer managed keys (CMKs) to encrypt sensitive data stored in Amazon S3 and Amazon RDS. The company recently hired a new security administrator who needs full KMS administrative access (ability to create, rotate, and delete keys) but must NOT be able to use the keys to decrypt business data. Additionally, the development team needs to use the keys for cryptographic operations (encrypt/decrypt) but must not be able to administer the keys. How should the solutions architect configure the KMS key policy?",o:["Create two separate CMKs: one for administration and one for data operations. Grant the security admin full access to the admin key and the development team access to the data key","In the KMS key policy, add a statement granting the security admin kms:Create*, kms:Describe*, kms:Enable*, kms:List*, kms:Put*, kms:Update*, kms:Revoke*, kms:Disable*, kms:Delete*, kms:TagResource, kms:ScheduleKeyDeletion actions. Add a separate statement granting the development team kms:Encrypt, kms:Decrypt, kms:ReEncrypt*, kms:GenerateDataKey* actions only","Grant the security admin the AWS managed policy AWSKeyManagementServicePowerUser, which provides administrative access but excludes decrypt operations","Use AWS IAM identity-based policies instead of key policies to control access, granting each group their respective permissions"],c:1,e:"<strong>Correct: Separate KMS key policy statements for admin vs. usage.</strong> KMS key policies support fine-grained action separation. Administrative actions (kms:Create*, kms:Delete*, kms:Rotate*, kms:Put*) manage the key itself. Cryptographic actions (kms:Encrypt, kms:Decrypt, kms:GenerateDataKey*) use the key for data protection. The security admin gets only administrative actions and cannot call Decrypt to read ciphertext. The development team gets only cryptographic actions and cannot modify the key policy. <strong>Why not A:</strong> Creating two CMKs for administration and operations does not solve the problem — a key policy on the data key still needs to separate admin from usage rights. <strong>Why not C:</strong> AWSKeyManagementServicePowerUser grants kms:CreateKey and List/Describe but NOT kms:ScheduleKeyDeletion or granular policy editing, and does not cleanly separate decrypt permissions. <strong>Why not D:</strong> KMS access requires BOTH a key policy statement AND an IAM policy. If the key policy does not explicitly allow an IAM entity, IAM policies alone are insufficient."},
+{id:376,domain:"Secure Architectures",topic:"Threat Detection",sub:"GuardDuty",q:"A company recently enabled Amazon GuardDuty across all accounts in their AWS Organization. Two weeks later, the security team receives a GuardDuty finding of type UnauthorizedAccess:EC2/SSHBruteForce targeting one of their EC2 instances. The finding indicates that an external IP address is attempting repeated SSH connections. The security team wants to automatically block the offending IP address and notify the on-call team within 5 minutes of the finding. What is the MOST automated solution?",o:["Manually review the GuardDuty finding in the console, identify the source IP, and add a DENY rule to the EC2 instance security group","Create an Amazon EventBridge rule that matches GuardDuty findings of type UnauthorizedAccess:EC2/SSHBruteForce. Target an AWS Lambda function that adds the source IP to a VPC Network ACL DENY rule and sends an SNS notification to the on-call team","Enable GuardDuty automated response and configure it to automatically terminate the targeted EC2 instance when SSH brute force is detected","Create a CloudWatch Logs metric filter on VPC Flow Logs to detect repeated failed SSH connection attempts and trigger a CloudWatch alarm that emails the on-call team"],c:1,e:"<strong>Correct: EventBridge rule to Lambda for NACL block + SNS notification.</strong> GuardDuty publishes findings as events to Amazon EventBridge in near-real-time. An EventBridge rule matching the finding type triggers a Lambda function automatically. The Lambda function extracts the source IP from the finding detail, adds a DENY rule to the appropriate VPC Network ACL (NACLs support DENY rules unlike security groups), and publishes to an SNS topic for on-call notification. This achieves fully automated response within the 5-minute requirement. <strong>Why not A:</strong> Manual review cannot meet a 5-minute SLA consistently. <strong>Why not C:</strong> GuardDuty does not have a built-in automated response feature that terminates instances. GuardDuty is a detection service — remediation requires EventBridge plus Lambda. <strong>Why not D:</strong> CloudWatch Logs metric filters on VPC Flow Logs add detection latency. GuardDuty has already done the detection — triggering on GuardDuty findings is faster and more reliable."},
+{id:377,domain:"Secure Architectures",topic:"Compliance",sub:"AWS Config",q:"A company must demonstrate compliance with a regulatory requirement that mandates all Amazon EC2 instances in their AWS account have encrypted EBS volumes. The compliance team needs a continuous, automated mechanism to detect non-compliant instances in real time and automatically remediate them by stopping the instance, creating an encrypted snapshot, and restarting with an encrypted volume. What should the solutions architect implement?",o:["Run a weekly AWS Trusted Advisor check to identify EC2 instances with unencrypted EBS volumes and send the report to the compliance team","Create an AWS Config rule using the managed rule ec2-ebs-encryption-by-default. Configure an AWS Config remediation action that triggers an AWS Systems Manager Automation document to stop the instance, create an encrypted snapshot, replace the volume, and restart the instance","Enable Amazon Inspector to continuously scan EC2 instances for policy violations including unencrypted storage volumes and configure Inspector to auto-remediate findings","Create an AWS Lambda function that runs on a daily schedule via EventBridge, describes all EC2 volumes, and sends an email report of unencrypted volumes to the compliance team"],c:1,e:"<strong>Correct: AWS Config managed rule + Systems Manager Automation remediation.</strong> AWS Config continuously evaluates resources against rules and records compliance state. The managed rule ec2-ebs-encryption-by-default checks whether EBS encryption by default is enabled. When a non-compliant resource is detected, AWS Config Remediation can automatically invoke an SSM Automation document to stop the instance, create an encrypted copy of each volume (using CopySnapshot with encryption), detach the unencrypted volume, attach the encrypted copy, and restart. <strong>Why not A:</strong> Trusted Advisor provides periodic checks, not continuous monitoring, and cannot trigger automated remediation. <strong>Why not C:</strong> Amazon Inspector focuses on software vulnerability assessments and does not evaluate EBS encryption compliance. <strong>Why not D:</strong> A daily Lambda report is periodic detection only and does not automate remediation."},
+{id:378,domain:"Secure Architectures",topic:"PKI & Certificates",sub:"ACM Private CA",q:"A company is building a microservices platform on Amazon EKS where services communicate with each other over TLS. The security team requires that all inter-service TLS connections use certificates issued by the company own private Certificate Authority (CA) — not public CAs. Certificates must be automatically renewed before expiration, and the private CA must be managed within AWS without operating on-premises CA infrastructure. What should the solutions architect implement?",o:["Purchase wildcard TLS certificates from a public CA like DigiCert and distribute them to all EKS pods using Kubernetes secrets","Create a private CA using AWS Private Certificate Authority (AWS Private CA). Use the AWS Certificate Manager (ACM) integration or the cert-manager Kubernetes add-on with the AWS PCA Issuer plugin to automatically issue and renew certificates for each service","Generate self-signed certificates using OpenSSL for each microservice and store them in AWS Secrets Manager with a Lambda function to rotate them every 90 days","Use AWS Certificate Manager public certificates for inter-service communication since ACM handles automatic renewal"],c:1,e:"<strong>Correct: AWS Private CA + cert-manager with PCA Issuer.</strong> AWS Private Certificate Authority is a managed private CA service with no on-premises infrastructure needed. For EKS, the cert-manager Kubernetes add-on paired with the AWS PCA Issuer plugin automates certificate lifecycle: cert-manager requests certificates from AWS Private CA when pods start, monitors expiration, and renews automatically before expiry. Each microservice gets a certificate from the company private CA. <strong>Why not A:</strong> Public CA certificates are issued by external entities, not the company own CA. They also cannot be scoped to internal service names. <strong>Why not C:</strong> Self-signed certificates do not chain to a trusted CA — every service would need to explicitly trust every other service certificate. This does not scale. <strong>Why not D:</strong> ACM public certificates are issued by Amazon public CA and are designed for internet-facing endpoints. They cannot be used for internal private service-to-service communication."},
+{id:379,domain:"Secure Architectures",topic:"Data Discovery",sub:"Amazon Macie",q:"A financial services company stores millions of files in Amazon S3 across hundreds of buckets accumulated over years from various business units. The Chief Information Security Officer (CISO) has concerns that some buckets may contain sensitive personally identifiable information (PII) such as Social Security numbers, credit card numbers, and bank account details. The CISO needs a comprehensive report of which buckets and objects contain PII without manually reviewing files. What service should the solutions architect enable?",o:["Enable AWS Config with the s3-bucket-server-side-encryption-enabled managed rule to identify unencrypted S3 buckets","Enable Amazon Macie across the organization. Run a sensitive data discovery job targeting all S3 buckets. Review the findings report that identifies buckets and objects containing PII categories including Social Security numbers, financial account numbers, and credit card numbers","Write an AWS Lambda function that downloads S3 objects and runs regex patterns against the content to detect PII, storing results in DynamoDB","Enable Amazon Inspector for S3 to scan objects for sensitive data patterns"],c:1,e:"<strong>Correct: Amazon Macie.</strong> Amazon Macie is a data security service that uses machine learning to automatically discover, classify, and protect sensitive data in Amazon S3. It has built-in managed data identifiers for hundreds of sensitive data types including SSNs, ITINs, credit card numbers, bank account numbers, and passport numbers. A Macie sensitive data discovery job scans S3 objects and produces findings identifying the bucket, object key, and specific sensitive data types found. <strong>Why not A:</strong> AWS Config S3 encryption rule checks whether encryption is enabled on the bucket — it does not inspect object content to find PII. <strong>Why not C:</strong> Custom Lambda regex scanning is complex to build accurately at scale and lacks the managed identifier library that Macie provides. <strong>Why not D:</strong> Amazon Inspector does not scan S3 object content for sensitive data. Inspector focuses on EC2 vulnerability assessments, ECR container image vulnerabilities, and Lambda function code analysis."},
+{id:380,domain:"Secure Architectures",topic:"Identity",sub:"AWS IAM Identity Center",q:"A company with 500 employees and 30 AWS accounts managed under AWS Organizations wants to implement centralized user authentication. Employees should log in once using their existing Microsoft Azure Active Directory (Azure AD) identities and get access to their permitted AWS accounts and roles without separate AWS IAM users. IT administrators need to assign AWS account access to employees or groups defined in Azure AD. What should the solutions architect configure?",o:["Create IAM users for each of the 500 employees in every AWS account they need access to and configure AWS IAM identity providers in each account for Azure AD federation","Enable AWS IAM Identity Center (formerly AWS SSO). Configure Azure AD as an external identity provider using SAML 2.0. Sync users and groups from Azure AD to IAM Identity Center using SCIM. Assign Azure AD groups to permission sets and AWS accounts in IAM Identity Center","Enable AWS Organizations and configure Service Control Policies to restrict account access based on employee department tags","Use Amazon Cognito user pools to federate with Azure AD and provide employees with access to the AWS Management Console"],c:1,e:"<strong>Correct: AWS IAM Identity Center with Azure AD federation (SAML + SCIM).</strong> IAM Identity Center is the recommended AWS service for workforce SSO across multiple AWS accounts. It integrates with external IdPs like Azure AD via SAML 2.0 for authentication and SCIM for automatic user/group synchronization. Administrators create permission sets and assign them to Azure AD groups for specific AWS accounts — group members automatically get access. One login grants access to all permitted accounts via the AWS access portal. <strong>Why not A:</strong> Creating IAM users in every account for 500 employees means 15,000 IAM users to manage — not scalable. <strong>Why not C:</strong> SCPs restrict what actions can be performed within accounts but do not provide SSO or authentication. <strong>Why not D:</strong> Amazon Cognito is designed for customer-facing application authentication, not workforce SSO into AWS accounts. Cognito cannot grant AWS Management Console access across multiple accounts."},
+{id:381,domain:"Resilient Architectures",topic:"Databases",sub:"RDS Multi-AZ",q:"A company runs a critical business application backed by an Amazon RDS for MySQL database in a single Availability Zone. The operations team has observed that during the monthly OS patching window, the database is unavailable for 20-30 minutes, causing application errors. Additionally, the company disaster recovery policy requires that the database survive an AZ failure with no more than 60 seconds of downtime. How should the solutions architect modify the RDS configuration?",o:["Take a manual RDS snapshot before each patching window and restore it to a new instance after patching completes","Enable RDS Multi-AZ deployment. RDS will maintain a synchronous standby replica in a different AZ. During planned maintenance including OS patching, RDS fails over to the standby, completing patching with typically 60-90 seconds of downtime. During an AZ failure, automatic failover to the standby occurs within 60 seconds","Create a Read Replica in a second AZ and promote it to primary during maintenance windows","Enable RDS automated backups with a 1-hour backup window and use point-in-time recovery to restore the database after a failure"],c:1,e:"<strong>Correct: RDS Multi-AZ deployment.</strong> Multi-AZ creates a synchronous standby replica in a different AZ with zero data loss (RPO = 0). During planned maintenance, RDS automatically fails over to the standby — reducing downtime to 60-90 seconds compared to 20-30 minutes for single-AZ patching. During an AZ failure, automatic failover typically completes in under 60 seconds. <strong>Why not A:</strong> Snapshot and restore requires manual intervention and creates extended downtime — far worse than the current window. <strong>Why not C:</strong> Read Replicas use asynchronous replication — data written to the primary but not yet replicated would be lost on promotion. Promoting a Read Replica is manual and requires application endpoint changes. <strong>Why not D:</strong> Automated backups enable point-in-time recovery but recovery requires creating a new DB instance (10-30+ minutes). This does not meet the 60-second RTO requirement."},
+{id:382,domain:"Resilient Architectures",topic:"Storage",sub:"S3 Cross-Region Replication",q:"A media company stores master video files in Amazon S3 in us-east-1. The company needs the files to be available in ap-southeast-1 for a new production studio. New objects uploaded to the us-east-1 bucket must automatically appear in the ap-southeast-1 bucket within minutes. The company also needs existing objects uploaded before replication was configured to be replicated. If an object is deleted in the source bucket, the deletion must NOT propagate to the destination to protect against accidental deletion. What should the solutions architect configure?",o:["Write a Lambda function triggered by S3 events that copies new objects from the source bucket to the destination bucket using the CopyObject API","Enable S3 Cross-Region Replication (CRR) from the us-east-1 bucket to the ap-southeast-1 bucket. Set Delete marker replication to Disabled to prevent deletion propagation. Use S3 Batch Operations with an S3 Inventory to replicate existing objects","Enable S3 Same-Region Replication with a lifecycle policy to transition objects to the ap-southeast-1 bucket after 0 days","Use AWS DataSync to schedule hourly data sync jobs between the us-east-1 and ap-southeast-1 S3 buckets"],c:1,e:"<strong>Correct: S3 Cross-Region Replication (CRR) + S3 Batch Operations for existing objects.</strong> CRR automatically replicates new objects to a destination bucket in a different region, typically within minutes. Disabling Delete marker replication means delete markers are NOT copied to the destination — the destination retains the object. For existing objects (uploaded before CRR was enabled), CRR does NOT retroactively replicate them — use S3 Batch Operations with the Replicate action. <strong>Why not A:</strong> Lambda CopyObject requires handling large files (up to 5 TB requiring multipart copy), throttling, and failures. CRR is managed and more reliable. <strong>Why not C:</strong> Same-Region Replication keeps both buckets in the same region — data would not replicate to ap-southeast-1. <strong>Why not D:</strong> AWS DataSync is designed for scheduled migrations, not continuous replication. Hourly sync means new objects could be up to 60 minutes old in the destination."},
+{id:383,domain:"Resilient Architectures",topic:"DNS & Traffic Management",sub:"Route 53 Failover",q:"A company hosts a dynamic web application using Amazon CloudFront with an Application Load Balancer in us-east-1 as the origin. The company wants to improve resilience such that if the us-east-1 ALB becomes unavailable, CloudFront automatically routes requests to a standby ALB in us-west-2. The failover should be transparent to end users and require no DNS changes. What should the solutions architect configure?",o:["Create a Route 53 latency-based routing record that points to both ALBs and configure CloudFront to use the Route 53 domain as its origin","Configure a CloudFront origin group with the us-east-1 ALB as the primary origin and the us-west-2 ALB as the secondary origin. Define the failover criteria using HTTP 5xx status codes or connection timeouts. CloudFront will automatically route to the secondary origin when the primary returns errors","Create two separate CloudFront distributions, one pointing to each ALB, and use Route 53 weighted routing to split traffic between distributions","Enable CloudFront automatic origin selection and configure health checks in the CloudFront console for both ALB origins"],c:1,e:"<strong>Correct: CloudFront Origin Groups with failover.</strong> CloudFront Origin Groups allow configuring a primary and secondary origin. When CloudFront receives an error response from the primary origin (configurable: HTTP 5xx status codes or network connection failures), it automatically retries the request against the secondary origin within the same CloudFront request — users never see an error. The failover is transparent: same CloudFront distribution, same domain name, no DNS changes required. <strong>Why not A:</strong> Using Route 53 latency-based routing as the CloudFront origin means CloudFront resolves the Route 53 domain to one ALB. If that ALB fails, CloudFront continues using the same resolved IP until DNS TTL expires, which does not provide per-request failover. <strong>Why not C:</strong> Two separate CloudFront distributions with Route 53 weighted routing routes each user to one distribution. If that distribution origin fails, that user is affected without per-request failover. <strong>Why not D:</strong> CloudFront does not have a built-in automatic origin selection feature with health checks in the console. Origin Groups is the correct feature."},
+{id:384,domain:"Resilient Architectures",topic:"Containers",sub:"ECS Service Auto Scaling",q:"A company runs a containerized order processing application on Amazon ECS with AWS Fargate. The application experiences variable traffic with predictable daily peaks between 9 AM and 6 PM on weekdays. During peak hours, the application needs 20 task replicas, while off-peak requires only 2. Additionally, the company wants the system to handle unexpected traffic spikes beyond the scheduled peak by adding tasks when CPU utilization exceeds 70%. What combination of auto-scaling should the solutions architect configure?",o:["Configure Application Auto Scaling for ECS with only target tracking based on CPU utilization at 70%, and set the minimum capacity to 20 tasks so the application is always at peak capacity","Configure scheduled scaling actions to set desired count to 20 at 9 AM and 2 tasks at 6 PM on weekdays. Additionally configure a target tracking scaling policy based on ECSServiceAverageCPUUtilization with a target value of 70%. Set the minimum capacity to 2 and maximum to 50","Use AWS Auto Scaling with predictive scaling based on historical CPU metrics to automatically learn the daily pattern without configuring scheduled actions","Configure step scaling based on CloudWatch CPU alarms: alarm at 60% CPU to add 5 tasks, alarm at 80% to add 10 tasks, alarm at 30% to remove 5 tasks"],c:1,e:"<strong>Correct: Scheduled scaling + target tracking CPU policy.</strong> Scheduled actions handle the predictable daily pattern: scale out to 20 tasks at 9 AM on weekdays and scale in to 2 tasks at 6 PM. The target tracking CPU policy (70% target) handles unexpected spikes beyond scheduled capacity. If demand pushes CPU above 70%, Application Auto Scaling adds tasks beyond the scheduled 20. The two mechanisms work together — scheduled actions set the baseline and target tracking handles dynamic spikes. <strong>Why not A:</strong> Setting minimum capacity to 20 means the service always runs at peak capacity even at 2 AM, wasting Fargate compute costs. <strong>Why not C:</strong> Predictive scaling requires sufficient historical data and time to learn patterns. Scheduled scaling with explicit times is more deterministic. <strong>Why not D:</strong> Step scaling requires manual tuning of thresholds and step sizes. Target tracking is self-adjusting and continuously calculates the scaling adjustment needed to maintain the 70% target."},
+{id:385,domain:"Resilient Architectures",topic:"Serverless",sub:"Lambda Reserved Concurrency",q:"A company uses AWS Lambda functions for two workloads sharing the same AWS account: a customer-facing checkout function that must always be available to process payments, and a batch processing function that processes analytics jobs. During a high-traffic event, the batch processing function scaled to 900 concurrent executions, consuming most of the account default Lambda concurrency limit of 1,000. The checkout function was throttled and customers could not complete purchases. How should the solutions architect prevent this from happening again?",o:["Increase the Lambda account-level concurrency limit to 10,000 by submitting a service limit increase request","Configure reserved concurrency of 200 on the checkout Lambda function to guarantee it always has 200 concurrent executions available. Configure reserved concurrency of 700 on the batch processing function to cap its maximum concurrency and prevent it from consuming the checkout function reserved allocation","Enable Lambda Provisioned Concurrency on the checkout function to pre-warm 200 execution environments so that the function responds immediately without cold starts","Move the batch processing Lambda functions to a separate AWS account to isolate their concurrency consumption"],c:1,e:"<strong>Correct: Reserved concurrency for both functions.</strong> Lambda reserved concurrency serves two purposes: it GUARANTEES a minimum number of concurrent executions for the function (from the account pool), and it CAPS the maximum concurrency for the function. By setting reserved concurrency of 200 on the checkout function, 200 concurrent executions are set aside exclusively for it — the batch function cannot consume them. By setting reserved concurrency of 700 on the batch function, it cannot exceed 700 concurrent executions regardless of demand. The remaining 100 is the unreserved pool. <strong>Why not A:</strong> Increasing the account limit doesn't solve the resource contention between functions. The batch function would still be able to consume all available concurrency if unrestricted. <strong>Why not C:</strong> Provisioned Concurrency pre-initializes execution environments to eliminate cold starts. It does NOT guarantee concurrency availability during high demand — the checkout function could still be throttled if unreserved concurrency is exhausted. <strong>Why not D:</strong> Separate accounts solve the isolation problem but add significant operational overhead. Reserved concurrency achieves the same isolation within the same account."},
+{id:386,domain:"Resilient Architectures",topic:"Databases",sub:"DynamoDB Global Tables",q:"A gaming company operates a global multiplayer game where players session state and scores are stored in Amazon DynamoDB in us-east-1. European players experience 200-300ms latency because the table is only in us-east-1. The company needs writes in either region to be visible to the other region within 2 seconds, and the solution must survive a complete regional outage while allowing continued gameplay. What should the solutions architect implement?",o:["Create DynamoDB Read Replicas in eu-west-1 that replicate from the us-east-1 primary table","Enable DynamoDB Global Tables and add eu-west-1 as a replica region. European players write to and read from the eu-west-1 replica. Changes propagate between regions with typically sub-second replication. Both regions can accept writes. If one region fails, the other continues to serve traffic independently","Deploy a separate DynamoDB table in eu-west-1 and write a Lambda function that syncs changes between tables using DynamoDB Streams every 5 minutes","Use Amazon Aurora Global Database with DynamoDB Accelerator (DAX) in eu-west-1 to cache reads and reduce latency"],c:1,e:"<strong>Correct: DynamoDB Global Tables.</strong> Global Tables is DynamoDB built-in multi-region, multi-master (active-active) replication feature. Each region has a full copy of the table and can accept both reads and writes locally — European players read and write to eu-west-1 with single-digit millisecond latency. Changes are replicated to us-east-1 via DynamoDB Streams with typically sub-second latency. If one region fails, the other continues operating independently. Global Tables handles conflict resolution using last-writer-wins. <strong>Why not A:</strong> DynamoDB does not have a native Read Replica feature like RDS. Global Tables is the correct replication mechanism and supports writes in all regions. <strong>Why not C:</strong> Custom Lambda sync every 5 minutes does not meet the 2-second replication requirement. <strong>Why not D:</strong> Aurora Global Database is a relational database service — using it in place of DynamoDB would require a complete application architecture change. DAX is a DynamoDB-compatible in-memory cache that does not replicate data across regions."},
+{id:387,domain:"Resilient Architectures",topic:"Content Delivery",sub:"CloudFront Origin Failover",q:"A company hosts a dynamic web application using Amazon CloudFront with an Application Load Balancer in us-east-1 as the origin. The company wants to improve resilience such that if the us-east-1 ALB becomes unavailable, CloudFront automatically routes requests to a standby ALB in us-west-2. The failover should be transparent to end users and require no DNS changes. What should the solutions architect configure?",o:["Create a Route 53 latency-based routing record that points to both ALBs and configure CloudFront to use the Route 53 domain as its origin","Configure a CloudFront origin group with the us-east-1 ALB as the primary origin and the us-west-2 ALB as the secondary origin. Define the failover criteria using HTTP 5xx status codes. CloudFront will automatically route to the secondary origin when the primary returns errors","Create two separate CloudFront distributions one pointing to each ALB and use Route 53 weighted routing to split traffic","Enable AWS Global Accelerator with two endpoint groups, one per region, to automatically route traffic to the healthy ALB"],c:1,e:"<strong>Correct: CloudFront Origin Groups.</strong> CloudFront Origin Groups allow configuring a primary and secondary origin. When CloudFront receives a 5xx error from the primary origin, it automatically retries against the secondary within the same request — fully transparent to users. Same CloudFront distribution, same domain name, no DNS changes. <strong>Why not A:</strong> Using Route 53 as the CloudFront origin means CloudFront resolves to one ALB and continues using that resolved IP until TTL expires — no per-request failover. <strong>Why not C:</strong> Two distributions route each user to one distribution without per-request failover. If that origin fails, that user is affected. <strong>Why not D:</strong> AWS Global Accelerator provides endpoint failover but it would be an additional layer. CloudFront Origin Groups achieve the same goal natively within CloudFront without the additional cost of Global Accelerator."},
+{id:388,domain:"Resilient Architectures",topic:"Caching",sub:"ElastiCache Redis Replication",q:"A social media platform uses Amazon ElastiCache for Redis to cache user session data and feed data. The current setup is a single Redis node. During a recent node failure, users were logged out and lost their sessions because the cache was unavailable for 15 minutes while a replacement node was provisioned. The engineering team needs to eliminate this single point of failure while also ensuring the solution can handle 5x the current read traffic for feed data. What should the solutions architect configure?",o:["Increase the ElastiCache Redis node type to a larger instance to handle more traffic and reduce the impact of individual node failures","Configure an ElastiCache for Redis replication group with one primary node and two read replicas across different Availability Zones. Enable Multi-AZ with automatic failover so that if the primary node fails, a read replica is automatically promoted to primary within seconds. Use the reader endpoint for feed data reads to distribute read traffic across replicas","Enable ElastiCache for Redis cluster mode with multiple shards each with zero replicas across three Availability Zones","Use Amazon MemoryDB for Redis instead of ElastiCache since MemoryDB stores data durably and never loses data on failover"],c:1,e:"<strong>Correct: ElastiCache Redis replication group with Multi-AZ automatic failover + read replicas.</strong> A replication group with one primary and two read replicas across AZs provides: (1) High availability — with Multi-AZ enabled, if the primary fails, ElastiCache automatically promotes a read replica in under 60 seconds, eliminating the 15-minute reprovisioning window. (2) Read scaling — the reader endpoint load-balances reads across both replicas, providing 3x read capacity. <strong>Why not A:</strong> A larger single node still has a single point of failure. Scaling up does not provide redundancy. <strong>Why not C:</strong> Cluster mode with multiple shards and zero replicas distributes data but each shard is still a single point of failure. <strong>Why not D:</strong> Amazon MemoryDB for Redis is valid for use cases where Redis is the source of truth. For a pure caching use case, ElastiCache with Multi-AZ provides sufficient resilience at lower cost."},
+{id:389,domain:"Resilient Architectures",topic:"Deployment",sub:"Blue-Green Deployments",q:"A company deploys a critical customer-facing API using AWS Elastic Beanstalk. The development team needs to deploy new versions with zero downtime and the ability to instantly roll back if issues are detected. The team also wants to validate the new version with 10% of production traffic before full cutover. The deployment must not require running two full environments long-term due to cost constraints. What deployment strategy should the solutions architect recommend?",o:["Use Elastic Beanstalk rolling deployment policy to update instances in batches of 25% while keeping the rest serving traffic","Use Elastic Beanstalk Traffic Splitting deployment policy. Deploy the new version, direct 10% of traffic to the new environment, monitor for errors, then shift 100% of traffic to the new version. Alternatively, implement blue-green deployment by cloning the current environment, deploying to the clone, then swapping the CNAME via Elastic Beanstalk Swap Environment URLs feature","Use Elastic Beanstalk All-at-Once deployment which replaces all instances simultaneously and provides instant rollback by redeploying the previous version","Configure AWS CodeDeploy with a canary deployment configuration to deploy to 10% of EC2 instances first then the remaining 90%"],c:1,e:"<strong>Correct: Elastic Beanstalk Traffic Splitting or Blue-Green with CNAME swap.</strong> Traffic Splitting deployment directs a configurable percentage (10%) of incoming traffic to a new application version — enabling canary testing. After validation, shift 100% to the new version. For blue-green: clone the current environment, deploy to the clone, test, then use Swap Environment URLs to atomically redirect traffic. Rollback is instant — swap URLs back. The green environment exists temporarily and is terminated after cutover, meeting cost requirements. <strong>Why not A:</strong> Rolling deployment updates instances in-place in batches. During the update the environment runs a mix of old and new versions. Rollback requires another rolling deployment. <strong>Why not C:</strong> All-at-Once replaces all instances simultaneously with downtime during replacement. Rollback requires redeploying the previous version, causing more downtime. <strong>Why not D:</strong> AWS CodeDeploy does not natively integrate with Elastic Beanstalk environment management. Elastic Beanstalk built-in deployment policies are more appropriate."},
+{id:390,domain:"Cost-Optimized Architectures",topic:"Storage",sub:"S3 Intelligent-Tiering",q:"A company stores 500 TB of data in Amazon S3 Standard. Analysis shows that access patterns are highly unpredictable: some objects are accessed frequently for a week after creation and then rarely, others are accessed sporadically with no clear pattern, and some objects are never accessed after upload. The company wants to minimize storage costs without the operational overhead of manually creating and managing S3 lifecycle policies and without paying retrieval fees when data is accessed. What should the solutions architect implement?",o:["Create S3 lifecycle policies that transition all objects to S3 Glacier after 30 days and S3 Glacier Deep Archive after 90 days","Enable S3 Intelligent-Tiering on all objects. S3 Intelligent-Tiering automatically monitors access patterns and moves objects between access tiers (Frequent Access, Infrequent Access, Archive Instant Access) based on actual access patterns. There are no retrieval fees for accessing objects regardless of which tier they are in","Manually audit S3 access logs monthly and move infrequently accessed objects to S3 Standard-IA using the AWS CLI","Use S3 Standard-IA for all objects since it is cheaper than S3 Standard, accepting the per-retrieval fees as a fixed cost"],c:1,e:"<strong>Correct: S3 Intelligent-Tiering.</strong> S3 Intelligent-Tiering is designed for unpredictable or unknown access patterns. It automatically moves objects between tiers based on observed access: objects not accessed for 30 days move to Infrequent Access; not accessed for 90 days moves to Archive Instant Access. When an object in IA is accessed, it moves back to Frequent Access immediately with no retrieval fees. A small monthly per-object monitoring fee applies, making Intelligent-Tiering most cost-effective for objects larger than 128KB stored for more than 30 days. <strong>Why not A:</strong> Fixed lifecycle policies do not account for unpredictable access. An object accessed at day 31 would incur Glacier retrieval fees and require hours to restore. <strong>Why not C:</strong> Manual monthly auditing of S3 access logs at 500 TB scale is operationally intensive and error-prone. <strong>Why not D:</strong> S3 Standard-IA charges a per-GB retrieval fee. For objects with unpredictable access where some objects are accessed frequently, Standard-IA retrieval fees could exceed storage savings. Intelligent-Tiering avoids retrieval fees."},
+{id:391,domain:"Cost-Optimized Architectures",topic:"Compute",sub:"Spot Instances",q:"A data analytics company runs large-scale Apache Spark jobs on Amazon EC2 to process daily data pipelines. The jobs run for 2-4 hours, are fault-tolerant (Spark automatically retries failed tasks), and do not have strict completion time requirements beyond finishing within a 6-hour window. Currently using On-Demand instances, the company spends $15,000 per month on EC2 and wants to reduce compute costs by at least 60%. What should the solutions architect implement?",o:["Purchase 1-year Standard Reserved Instances for the EC2 fleet used in the Spark jobs","Deploy the Spark cluster using Amazon EMR with a mixed instance policy: use On-Demand instances for the master node and a mix of On-Demand (20%) and Spot Instances (80%) for core and task nodes. Configure instance diversification across 5+ instance types and 3 Availability Zones to improve Spot availability","Move the Spark jobs to AWS Lambda functions to eliminate EC2 costs entirely","Use Savings Plans with a 3-year commitment to achieve maximum discount on the EC2 instances"],c:1,e:"<strong>Correct: Amazon EMR with Spot Instances for task/core nodes.</strong> Spot Instances offer up to 90% discount compared to On-Demand prices. For fault-tolerant batch workloads like Spark (which automatically retries failed tasks), Spot interruptions are gracefully handled. Best practices: diversify across 5+ instance types and AZs, use On-Demand for the master node (non-fault-tolerant control plane), use a mix for core nodes to protect HDFS data. With 80% Spot at approximately 70% discount, overall savings exceed 60% of current spend. <strong>Why not A:</strong> Reserved Instances provide 30-40% savings for 1-year. But jobs running 3 hours per day utilize only 12.5% of the reserved 24-hour capacity — extremely wasteful. Reserved Instances are best for always-on workloads. <strong>Why not C:</strong> Lambda has a maximum execution timeout of 15 minutes — Spark jobs running 2-4 hours cannot run on Lambda. <strong>Why not D:</strong> Compute Savings Plans require a consistent $/hour commitment. Batch jobs running 3 hours per day have very low utilization — paying for 24 hours of commitment for 3 hours of use is inefficient."},
+{id:392,domain:"Cost-Optimized Architectures",topic:"Compute",sub:"Compute Optimizer",q:"A company has a fleet of 200 Amazon EC2 instances running various workloads across different instance types. The engineering team suspects many instances are over-provisioned — instances sized for peak load two years ago are now running at consistently low CPU and memory utilization. The company wants to identify rightsizing opportunities to reduce EC2 costs without impacting performance. What should the solutions architect use?",o:["Review CloudWatch CPU utilization metrics for all 200 instances manually and downsize any instance averaging below 20% CPU over the past week","Enable AWS Compute Optimizer for the account. After 14 days of metrics collection, Compute Optimizer analyzes CPU, memory, network, and disk utilization patterns using machine learning and provides specific rightsizing recommendations including recommended instance types, projected cost savings, and estimated performance risk","Use AWS Trusted Advisor cost optimization checks to identify low-utilization EC2 instances based on the past 14 days of CloudWatch data","Use AWS Cost Explorer EC2 rightsizing recommendations to identify instances that can be downsized or terminated"],c:1,e:"<strong>Correct: AWS Compute Optimizer.</strong> Compute Optimizer uses machine learning to analyze historical CloudWatch utilization metrics (CPU, network I/O, disk I/O, and memory via CloudWatch agent) across multiple dimensions. After 14 days, it generates recommendations for each EC2 instance: the recommended instance type/size, the projected utilization change after rightsizing, performance risk level (low/medium/high), and estimated monthly cost savings. It analyzes utilization patterns including peaks, not just averages, to avoid recommending instance types that would cause problems during peak periods. <strong>Why not A:</strong> Reviewing CloudWatch CPU metrics manually for 200 instances is extremely time-consuming. Using only CPU average below 20% ignores memory utilization, network I/O, and peak patterns — downsizing based on average CPU alone could cause performance problems. <strong>Why not C:</strong> Trusted Advisor low-utilization EC2 check uses CPU averages and is less sophisticated than Compute Optimizer ML-based analysis. It does not provide specific instance type recommendations with performance risk assessment. <strong>Why not D:</strong> AWS Cost Explorer rightsizing recommendations are based on simpler utilization thresholds (CPU only by default). Compute Optimizer provides more sophisticated analysis including memory and performance risk ratings."},
+{id:393,domain:"Cost-Optimized Architectures",topic:"Databases",sub:"RDS Reserved Instances",q:"A company runs an Amazon RDS for PostgreSQL Multi-AZ instance (db.r6g.2xlarge) that serves as the primary database for a production application. The instance runs continuously 24/7 and has been stable in this configuration for 8 months. The company is planning its annual AWS budget and the CTO wants to reduce database costs. Database performance requirements are not expected to change in the next year. What should the solutions architect recommend?",o:["Migrate the RDS database to a smaller instance type to reduce costs immediately","Purchase a 1-year Reserved Instance for the db.r6g.2xlarge in the same region. This provides up to 42% savings compared to On-Demand pricing for the same instance type and aligns with the company 1-year planning horizon","Switch the database to Amazon Aurora Serverless v2 to pay only for compute consumed during queries","Enable RDS Multi-AZ and switch to a smaller instance type to compensate for cost"],c:1,e:"<strong>Correct: RDS Reserved Instance (1-year).</strong> When an RDS instance runs continuously 24/7 with stable, predictable requirements, Reserved Instances provide significant cost savings. A 1-year No Upfront or Partial Upfront Reserved Instance for db.r6g.2xlarge provides approximately 35-42% savings over On-Demand pricing. Reserved Instances apply automatically to matching running RDS instances. For a continuously running production database with no planned changes, this is the most straightforward cost optimization. <strong>Why not A:</strong> Downsizing the instance type reduces performance capacity. The question states performance requirements are not expected to change — downsizing risks degrading application performance. <strong>Why not C:</strong> Migrating from RDS PostgreSQL to Aurora Serverless v2 requires testing, potential application changes, and migration planning. Reserved Instances on the existing RDS instance provide immediate, risk-free savings. <strong>Why not D:</strong> Multi-AZ is already specified in the scenario. Downsizing to compensate for RI cost without analyzing performance impact is risky."},
+{id:394,domain:"High-Performing Architectures",topic:"Caching",sub:"ElastiCache Read Offload",q:"A social networking application stores user profile data in Amazon RDS for MySQL. As the user base has grown to 10 million users, the RDS instance is experiencing CPU utilization above 80% during peak hours, primarily due to high volumes of repetitive read queries for user profiles (profile data changes infrequently — at most a few times per week per user). The application team cannot change the database schema. What is the MOST effective solution to reduce RDS CPU utilization?",o:["Upgrade the RDS instance to a larger instance type with more CPU and memory","Add an Amazon ElastiCache for Redis cluster in front of the RDS database. Cache user profile query results in Redis with a TTL of 1 hour. Application code reads from Redis first; on a cache miss, queries RDS and populates the cache. Profile updates invalidate or update the relevant cache keys","Create RDS Read Replicas and distribute read queries across the replicas using a load balancer","Enable RDS Performance Insights to identify and optimize the specific slow queries causing high CPU"],c:1,e:"<strong>Correct: Amazon ElastiCache for Redis caching layer.</strong> User profile data that changes infrequently is an ideal caching candidate — a 1-hour TTL means cached data is served without touching RDS for the vast majority of requests. Redis sub-millisecond response times for cache hits completely bypass RDS. Given that profile reads are repetitive (the same users profiles are read many times), cache hit rate will be high — potentially 95%+ after cache warm-up. This dramatically reduces RDS CPU utilization. Cache invalidation on profile updates ensures data freshness. <strong>Why not A:</strong> Upgrading to a larger instance provides more CPU capacity but does not address the root cause: repetitive read queries that could be served from cache. Vertical scaling is expensive and eventually hits limits. <strong>Why not C:</strong> Read Replicas distribute read queries but each query still hits a database. The total compute work is the same — just distributed. For highly repetitive reads of slowly-changing data, caching is more efficient. <strong>Why not D:</strong> Performance Insights helps identify slow queries — it is a diagnostic tool, not a performance solution. After identifying the slow queries, the fix is still caching or query optimization."},
+{id:395,domain:"High-Performing Architectures",topic:"Streaming",sub:"Kinesis Data Streams",q:"A logistics company collects GPS telemetry data from 50,000 delivery vehicles, each sending location updates every 10 seconds. This generates approximately 5,000 events per second. The company needs to process this data in real time to detect vehicles deviating from their routes, update a live map dashboard, and store raw telemetry in Amazon S3 for historical analysis. The processing must complete within 5 seconds of event ingestion. What should the solutions architect implement?",o:["Collect telemetry via API Gateway and store directly in Amazon S3. Use Amazon Athena to query the S3 data every minute and detect route deviations","Use Amazon Kinesis Data Streams with sufficient shards to handle 5,000 events per second. Process events using AWS Lambda triggered by Kinesis for route deviation detection and dashboard updates. Use Kinesis Data Firehose to deliver raw telemetry to Amazon S3 automatically","Collect telemetry in an Amazon SQS queue and process with a fleet of EC2 instances polling the queue, writing results to RDS and S3","Use Amazon MSK (Managed Streaming for Apache Kafka) with a Kafka consumer application on EKS to process telemetry and write to S3"],c:1,e:"<strong>Correct: Kinesis Data Streams + Lambda + Kinesis Data Firehose.</strong> Kinesis Data Streams is purpose-built for real-time, high-throughput event ingestion. Each shard handles 1 MB/s or 1,000 records/second ingest — for 5,000 events/second, 5+ shards suffice. Lambda integrates natively as a Kinesis consumer, processing batches of records within seconds of ingestion — meeting the 5-second processing requirement. Kinesis Data Firehose can be configured as a parallel consumer on the same Kinesis Data Stream, buffering and delivering raw events to S3 without custom code. <strong>Why not A:</strong> S3 + Athena is a batch analytics pattern. Athena queries every minute provide 60-second latency, far exceeding the 5-second requirement. <strong>Why not C:</strong> SQS does not preserve event ordering. At 5,000 events per second, fleet sizing and scaling of EC2 pollers is complex. Kinesis provides ordered, replayable streams with native Lambda integration. <strong>Why not D:</strong> Amazon MSK is a valid real-time streaming solution but requires more operational overhead including cluster sizing, Kafka consumer application development, and EKS management. For AWS-native architectures, Kinesis Data Streams plus Lambda is simpler and more cost-effective at this scale."}
+];
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// STATE (localStorage)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const STORE_KEY = 'aws_saa_v1';
+const DOMAINS = [...new Set(Q.map(x => x.domain))];
+const TOPICS  = [...new Set(Q.map(x => x.topic))];
+
+function loadState() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); }
+  catch { return {}; }
+}
+function saveState() { localStorage.setItem(STORE_KEY, JSON.stringify(S)); }
+
+let S = {
+  answered: 0, correct: 0, quizzes: 0,
+  streak: 0, lastDay: '',
+  topicStats: {}, domainStats: {},
+  seenIds: [], bookmarks: [], history: [],
+  ...loadState()
+};
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// QUIZ STATE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+let QZ = { qs:[], idx:0, picks:{}, correct:0, type:'mini' };
+let pending = null; // selected option index awaiting submit
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// HELPERS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function shuffle(a) {
+  const b = [...a];
+  for (let i=b.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]; }
+  return b;
+}
+function pct(c,t) { return t ? Math.round(c/t*100) : null; }
+function colorFor(p) {
+  if (p===null) return 'var(--border)';
+  if (p>=80) return 'var(--green)';
+  if (p>=60) return 'var(--accent)';
+  return 'var(--red)';
+}
+function labelFor(p) {
+  if (p===null) return 'Not started';
+  if (p>=80) return 'Strong 💪';
+  if (p>=60) return 'Developing 📈';
+  return 'Needs Work ⚠️';
+}
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  if (id==='home') renderHome();
+  if (id==='dash') renderDash();
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function touchStreak() {
+  const today = new Date().toDateString();
+  if (S.lastDay !== today) {
+    const yest = new Date(Date.now()-86400000).toDateString();
+    S.streak = (S.lastDay===yest) ? S.streak+1 : 1;
+    S.lastDay = today;
+  }
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// HOME
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function renderHome() {
+  const p = pct(S.correct, S.answered);
+  document.getElementById('home-stats').innerHTML = `
+    <div class="stat"><div class="stat-n">${S.answered||0}</div><div class="stat-l">Questions Answered</div></div>
+    <div class="stat"><div class="stat-n" style="color:${colorFor(p)}">${p!==null?p+'%':'—'}</div><div class="stat-l">Overall Score</div></div>
+    <div class="stat"><div class="stat-n">${S.streak||0}</div><div class="stat-l">Day Streak 🔥</div></div>
+    <div class="stat"><div class="stat-n">${S.quizzes||0}</div><div class="stat-l">Quizzes Taken</div></div>`;
+  // Show Weak Areas button if any topic is below 60%
+  const hasWeak = TOPICS.some(t => { const ts=S.topicStats?.[t]; return ts&&ts.t>0&&pct(ts.c,ts.t)<60; });
+  document.getElementById('weak-btn').style.display = hasWeak ? 'block' : 'none';
+  // Show Bookmarks button
+  const bkCount = (S.bookmarks||[]).length;
+  document.getElementById('bk-btn').style.display = bkCount > 0 ? 'block' : 'none';
+  document.getElementById('bk-count').textContent = bkCount;
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// DASHBOARD
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function renderDash() {
+  let h = '';
+  const op = pct(S.correct, S.answered);
+
+  // Overall
+  h += `<div class="card" style="text-align:center">
+    <div style="font-size:11px;color:var(--muted);letter-spacing:.5px;margin-bottom:6px">OVERALL PROFICIENCY</div>
+    <div style="font-size:52px;font-weight:700;color:${colorFor(op)}">${op!==null?op+'%':'—'}</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:4px">${S.answered} questions answered · ${labelFor(op)}</div>
+  </div>`;
+
+  // By Domain
+  h += `<div class="card"><div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:14px;letter-spacing:.3px">BY EXAM DOMAIN</div>`;
+  DOMAINS.forEach(d => {
+    const ds = S.domainStats?.[d]||{c:0,t:0};
+    const p = pct(ds.c,ds.t);
+    h += `<div class="bar-row">
+      <div class="bar-label">
+        <span class="bar-name" style="font-weight:600">${d}</span>
+        <span class="bar-meta">${ds.t} answered · ${p!==null?p+'%':'—'}</span>
+      </div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${p||0}%;background:${colorFor(p)}"></div></div>
+    </div>`;
+  });
+  h += '</div>';
+
+  // By Topic
+  h += `<div class="card"><div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:14px;letter-spacing:.3px">BY TOPIC</div>`;
+  TOPICS.forEach(t => {
+    const ts = S.topicStats?.[t]||{c:0,t:0};
+    const p = pct(ts.c,ts.t);
+    const col = colorFor(p);
+    h += `<div class="bar-row">
+      <div class="bar-label">
+        <span class="bar-name">${t}</span>
+        <span class="badge" style="background:${col}22;color:${col}">${labelFor(p).replace(/ .*/,'')}</span>
+      </div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${p||0}%;background:${col}"></div></div>
+      <div style="font-size:10px;color:var(--muted);margin-top:3px">${ts.t} answered · ${p!==null?p+'%':'—'}</div>
+    </div>`;
+  });
+  h += '</div>';
+
+  // Weak areas callout
+  const weak = TOPICS.filter(t => { const ts=S.topicStats?.[t]; return ts&&ts.t>0&&pct(ts.c,ts.t)<60; });
+  if (weak.length) {
+    h += `<div class="card" style="border-color:var(--red)">
+      <div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:10px">⚠️ Priority Focus Areas</div>`;
+    weak.forEach(t => {
+      const ts=S.topicStats[t];
+      h += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:13px">${t}</span>
+        <span style="color:var(--red);font-weight:700;font-size:13px">${pct(ts.c,ts.t)}%</span>
+      </div>`;
+    });
+    h += '</div>';
+  }
+
+  h += `<div style="text-align:center;padding:12px;font-size:11px;color:var(--muted)">
+    v3 · 100 questions across all 4 SAA-C03 domains
+  </div>`;
+
+  document.getElementById('dash-body').innerHTML = h;
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// QUIZ ENGINE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+let timerInterval = null;
+let timerSecs = 0;
+
+function startTimer(seconds) {
+  clearInterval(timerInterval);
+  timerSecs = seconds;
+  const el = document.getElementById('exam-timer');
+  el.classList.add('show');
+  el.classList.remove('warn');
+  function tick() {
+    if (timerSecs <= 0) { clearInterval(timerInterval); showResults(); return; }
+    timerSecs--;
+    const h = Math.floor(timerSecs/3600);
+    const m = Math.floor((timerSecs%3600)/60);
+    const s = timerSecs%60;
+    el.textContent = `⏱ ${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    if (timerSecs <= 600) el.classList.add('warn'); // red under 10 min
+  }
+  tick();
+  timerInterval = setInterval(tick, 1000);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  const el = document.getElementById('exam-timer');
+  if (el) { el.classList.remove('show','warn'); }
+}
+
+function startQuiz(type) {
+  stopTimer();
+  const count = type==='full' ? 65 : 10;
+  let pool = shuffle(Q);
+
+  if (type==='extra') {
+    const seen = new Set(S.seenIds||[]);
+    const unseen = pool.filter(q=>!seen.has(q.id));
+    pool = unseen.length>=5 ? unseen : pool;
+  } else if (type==='weak') {
+    const weakTopics = new Set(TOPICS.filter(t => {
+      const ts=S.topicStats?.[t]; return ts&&ts.t>0&&pct(ts.c,ts.t)<60;
+    }));
+    const weakQs = shuffle(Q.filter(q=>weakTopics.has(q.topic)));
+    const otherQs = shuffle(Q.filter(q=>!weakTopics.has(q.topic)));
+    pool = [...weakQs, ...otherQs];
+  } else if (type==='bookmarks') {
+    const bkSet = new Set(S.bookmarks||[]);
+    pool = shuffle(Q.filter(q=>bkSet.has(q.id)));
+    if (pool.length===0) { alert('No bookmarked questions yet. Bookmark questions during a quiz using the 🔖 button.'); return; }
+  }
+
+  QZ = { qs: pool.slice(0, Math.min(count, pool.length)), idx:0, picks:{}, correct:0, type };
+  pending = null;
+  goTo('quiz');
+  if (type==='full') startTimer(130*60); // 130 minutes
+  renderQ();
+}
+
+function renderQ() {
+  const q = QZ.qs[QZ.idx];
+  const total = QZ.qs.length;
+  const i = QZ.idx;
+  const answered = QZ.picks[i];
+  const LTRS = ['A','B','C','D'];
+
+  // Header
+  document.getElementById('q-prog-txt').textContent = `Question ${i+1} of ${total}`;
+  document.getElementById('q-prog-bar').style.width = `${(i/total)*100}%`;
+  document.getElementById('live-score').textContent = `${QZ.correct} / ${i}`;
+
+  // Options
+  let optsH = q.o.map((opt,oi)=>{
+    let cls = 'opt';
+    if (answered!==undefined) {
+      if (oi===q.c) cls+=' correct';
+      else if (oi===answered) cls+=' wrong';
+    } else if (oi===pending) cls+=' sel';
+    return `<div class="${cls}" onclick="pickOpt(${oi})" id="op${oi}">
+      <span class="opt-ltr">${LTRS[oi]}</span>
+      <span class="opt-txt">${opt}</span>
+    </div>`;
+  }).join('');
+
+  // Explanation
+  let explH = '';
+  if (answered!==undefined) {
+    const icon = answered===q.c ? '✅' : '❌';
+    explH = `<div class="expl show">${icon} ${q.e}</div>`;
+  }
+
+  // Bottom button
+  let btnH = '';
+  if (answered===undefined) {
+    btnH = `<button class="btn btn-gold" id="sub-btn" onclick="submitQ()" ${pending===null?'disabled':''} style="margin-top:14px">Submit Answer</button>`;
+  } else if (i < total-1) {
+    btnH = `<button class="btn btn-gold" onclick="nextQ()" style="margin-top:14px">Next Question →</button>`;
+  } else {
+    btnH = `<button class="btn btn-green" onclick="showResults()" style="margin-top:14px">📊 View Results</button>`;
+  }
+
+  const isBk = (S.bookmarks||[]).includes(q.id);
+  document.getElementById('quiz-body').innerHTML = `
+    <div style="padding:0 16px;max-width:500px;margin:0 auto">
+      <div class="card">
+        <div class="q-meta">📁 ${q.domain} &nbsp;·&nbsp; ${q.topic} &nbsp;·&nbsp; ${q.sub}
+          <button class="bk-btn" onclick="toggleBookmark(${q.id})" title="Bookmark">${isBk?'🔖':'🏷️'}</button>
+        </div>
+        <div class="q-text">${q.q}</div>
+        ${optsH}
+        ${explH}
+        ${btnH}
+      </div>
+    </div>`;
+}
+
+function pickOpt(i) {
+  if (QZ.picks[QZ.idx]!==undefined) return; // already answered
+  pending = i;
+  renderQ();
+}
+
+function submitQ() {
+  if (pending===null) return;
+  const q = QZ.qs[QZ.idx];
+  const ok = pending===q.c;
+  QZ.picks[QZ.idx] = pending;
+  if (ok) QZ.correct++;
+
+  // Update persistent stats
+  S.answered++;
+  if (ok) S.correct++;
+  if (!S.topicStats[q.topic]) S.topicStats[q.topic]={c:0,t:0};
+  S.topicStats[q.topic].t++;
+  if (ok) S.topicStats[q.topic].c++;
+  if (!S.domainStats[q.domain]) S.domainStats[q.domain]={c:0,t:0};
+  S.domainStats[q.domain].t++;
+  if (ok) S.domainStats[q.domain].c++;
+  if (!S.seenIds) S.seenIds=[];
+  if (!S.seenIds.includes(q.id)) S.seenIds.push(q.id);
+  touchStreak();
+  saveState();
+
+  pending = null;
+  renderQ();
+}
+
+function nextQ() {
+  QZ.idx++;
+  pending = null;
+  renderQ();
+}
+
+function exitQuiz() {
+  if (QZ.idx>0 || QZ.picks[0]!==undefined) {
+    if (!confirm('Exit quiz? Your progress will be lost.')) return;
+  }
+  stopTimer();
+  goTo('home');
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// RESULTS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function showResults() {
+  stopTimer();
+  S.quizzes++;
+  // Save to history
+  if (!S.history) S.history=[];
+  S.history.push({ p: Math.round(QZ.correct/QZ.qs.length*100), c: QZ.correct, t: QZ.qs.length, type: QZ.type, ts: Date.now() });
+  if (S.history.length > 10) S.history = S.history.slice(-10);
+  saveState();
+
+  const cor = QZ.correct;
+  const tot = QZ.qs.length;
+  const p   = Math.round(cor/tot*100);
+  const pass = p>=72;
+  const LTRS = ['A','B','C','D'];
+
+  // Score history mini chart
+  let chartH = '';
+  if (S.history.length > 1) {
+    const bars = S.history.map(h => {
+      const col = h.p>=72 ? 'var(--green)' : h.p>=55 ? 'var(--accent)' : 'var(--red)';
+      const ht = Math.max(8, Math.round(h.p * 0.48));
+      const label = h.p+'%';
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center">
+        <div style="width:100%;background:${col};border-radius:4px 4px 0 0;height:${ht}px"></div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px">${label}</div>
+      </div>`;
+    }).join('');
+    chartH = `<div class="card" style="margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;margin-bottom:8px;color:var(--accent)">SCORE HISTORY</div>
+      <div style="display:flex;align-items:flex-end;gap:4px;height:56px">${bars}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:6px;text-align:center">Last ${S.history.length} quizzes · 72% = passing</div>
+    </div>`;
+  }
+
+  let h = `
+    <div class="score-ring" style="border-color:${pass?'var(--green)':'var(--red)'}">
+      <div class="score-big" style="color:${pass?'var(--green)':'var(--red)'}">${p}%</div>
+      <div class="score-sub">${cor} / ${tot}</div>
+    </div>
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="font-size:18px;font-weight:700">${pass?'🎉 Passed!':'📚 Keep Going!'}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">AWS passing score: 72% &nbsp;·&nbsp; Need ${Math.ceil(tot*.72)} correct</div>
+    </div>
+    ${chartH}
+    <div class="card">
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px">Question Review</div>`;
+
+  QZ.qs.forEach((q,i)=>{
+    const a = QZ.picks[i];
+    if (a===undefined) return;
+    const ok = a===q.c;
+    h += `<div class="rev-item" style="border-color:${ok?'var(--green)':'var(--red)'}">
+      <div class="rev-q"><strong>${i+1}.</strong> ${q.q.length>90?q.q.slice(0,90)+'…':q.q}</div>
+      <div class="rev-a">Your answer: ${LTRS[a]}. ${q.o[a].slice(0,55)}${q.o[a].length>55?'…':''}</div>
+      ${!ok?`<div class="rev-a" style="color:var(--green)">✓ Correct: ${LTRS[q.c]}. ${q.o[q.c].slice(0,55)}${q.o[q.c].length>55?'…':''}</div>`:''}
+    </div>`;
+  });
+  h += `</div>
+    <button class="btn btn-gold" onclick="goTo('home')">🏠 Back to Home</button>
+    <button class="btn btn-gray" onclick="startQuiz('mini')">📝 Take Another Quiz</button>`;
+
+  document.getElementById('results-body').innerHTML = h;
+  document.getElementById('results').classList.add('active');
+  document.querySelectorAll('.screen').forEach(s=>{ if(s.id!=='results') s.classList.remove('active'); });
+  window.scrollTo(0,0);
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// BOOKMARKS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function toggleBookmark(id) {
+  if (!S.bookmarks) S.bookmarks=[];
+  const idx = S.bookmarks.indexOf(id);
+  if (idx===-1) S.bookmarks.push(id);
+  else S.bookmarks.splice(idx,1);
+  saveState();
+  renderQ(); // re-render to update icon
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// STUDY MODE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function goStudy(topicFilter) {
+  const el = document.getElementById('study-body');
+  const titleEl = document.getElementById('study-title');
+  const LTRS = ['A','B','C','D'];
+
+  if (!topicFilter) {
+    // Show topic picker
+    titleEl.textContent = 'Study Mode';
+    let h = `<p style="font-size:13px;color:var(--muted);margin-bottom:16px">Choose a topic to study. All answers and explanations are shown immediately — no scoring.</p>`;
+    // Group by domain then topic
+    DOMAINS.forEach(d => {
+      const domTopics = [...new Set(Q.filter(q=>q.domain===d).map(q=>q.topic))];
+      h += `<div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.5px;margin-bottom:6px;margin-top:4px">${d.toUpperCase()}</div>`;
+      domTopics.forEach(t => {
+        const count = Q.filter(q=>q.topic===t).length;
+        const ts = S.topicStats?.[t]||{c:0,t:0};
+        const p = pct(ts.c,ts.t);
+        const col = colorFor(p);
+        h += `<button class="topic-btn" onclick="goStudy('${t.replace(/'/g,"\\'")}')">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:600">${t}</span>
+            ${p!==null?`<span style="font-size:11px;padding:2px 7px;border-radius:999px;background:${col}22;color:${col}">${p}%</span>`:'<span style="font-size:11px;color:var(--muted)">New</span>'}
+          </div>
+          <div class="tb-meta">${count} question${count!==1?'s':''}</div>
+        </button>`;
+      });
+    });
+    el.innerHTML = h;
+  } else {
+    // Show all questions for this topic
+    titleEl.textContent = topicFilter;
+    const qs = Q.filter(q=>q.topic===topicFilter);
+    let h = `<button onclick="goStudy()" style="background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;padding:0 0 12px;display:block">← All Topics</button>`;
+    h += `<p style="font-size:12px;color:var(--muted);margin-bottom:14px">${qs.length} questions · ${topicFilter}</p>`;
+    qs.forEach((q,i) => {
+      let optsH = q.o.map((opt,oi)=>{
+        const cls = oi===q.c ? 'study-opt s-correct' : 'study-opt s-other';
+        return `<div class="${cls}"><span style="font-weight:700;min-width:16px;color:var(--muted)">${LTRS[oi]}</span>&nbsp;${opt}${oi===q.c?' <span style="color:var(--green);margin-left:6px">✓</span>':''}</div>`;
+      }).join('');
+      h += `<div class="study-q">
+        <div style="font-size:11px;color:var(--accent);font-weight:700;margin-bottom:8px">${q.sub}</div>
+        <div class="s-q">${i+1}. ${q.q}</div>
+        ${optsH}
+        <div class="study-expl">${q.e}</div>
+      </div>`;
+    });
+    el.innerHTML = h;
+  }
+
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('study').classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// INIT
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+touchStreak();
+renderHome();
+</script>
+</body>
+</html>
